@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_PDxx_ModesOfOperation" Id="{d48ee47b-b418-4bd2-9fca-b6d81c0f528a}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_PDxx_ModesOfOperation :
+(
+	AUTO_SETUP := -2,
+	CLOCK_DIRECTION_MODE,
+	NO_MODE_CHANGE_OR_NO_MODE_ASSIGNED,
+	PROFILE_POSITION_MODE,
+	VELOCITY_MODE,
+	PROFILE_VELOCITY_MODE,
+	PROFILE_TORQUE_MODE,
+	RESERVED,
+	HOMING_MODE,
+	INTERPOLATED_POSITION_MODE,
+	CYCLIC_SYNCHRONOUS_POSITION_MODE,
+	CYCLIC_SYNCHRONOUS_VELOCITY_MODE,
+	CYCLIC_SYNCHRONOUS_TORQUE_MODE
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

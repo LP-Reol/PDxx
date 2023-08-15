@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CANopenDevice" Id="{f6f82901-4147-4dac-875b-7e787f7e1d4d}">
+    <Declaration><![CDATA[TYPE ST_CANopenDevice :
+STRUCT
+    AmsNetId	: STRING(23); (* The AMSNetID addresses the EL6751. Can be empty if only one local single channel card is present*)
+    PortNr		: WORD;       (* This Port No. addresses the CANopen Node (see System Manager) *)
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

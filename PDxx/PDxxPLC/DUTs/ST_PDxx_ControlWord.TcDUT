@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_PDxx_ControlWord" Id="{faea0f23-8888-4693-bba7-eba9714690de}">
+    <Declaration><![CDATA[TYPE ST_PDxx_ControlWord :
+STRUCT
+	SwitchedOn_bit_0			: BOOL; // Value = "1": Switches to the "Switched on" state
+	EnableVoltage_bit_1			: BOOL; // Value = "1": Switches to the "Enable voltage" state
+	QuickStop_bit_2				: BOOL; // Value = "0": Switches to the "Quick stop" state
+	EnableOperation_bit_3		: BOOL; // Value = "1": Switches to the "Enable operation" state
+	OperationModeSpecific_bit_4	: BOOL; // Meaning is dependent on the selected operating mode
+	OperationModeSpecific_bit_5	: BOOL; // Meaning is dependent on the selected operating mode
+	OperationModeSpecific_bit_6	: BOOL; // Meaning is dependent on the selected operating mode
+	FaultReset_bit_7			: BOOL; // Resets an error (if possible)
+	Halt_bit_8					: BOOL; // Value = "1": Triggers a halt; valid in the following modes: Profile Position, Velocity, Profile Velocity, Profile Torque, Interpolated Position Mode
+	OperationModeSpecific_bit_9	: BOOL; // not described in the manual...
+	
+	eState : E_PDxx_State;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

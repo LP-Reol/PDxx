@@ -1,15 +1,77 @@
 <?xml version="1.0"?>
 <TcSmItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4024.47" ClassName="CNestedPlcProjDef">
 	<Project GUID="{4E346434-4A57-47A1-B110-BE3BED7EDEC7}" Name="PDxxPLC" PrjFilePath="..\..\PDxxPLC\PDxxPLC.plcproj" TmcFilePath="..\..\PDxxPLC\PDxxPLC.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-		<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2">
+		<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcHash="{44E72D0A-B3C1-0521-8344-A6612D9433FA}">
 			<Name>PDxxPLC Instance</Name>
 			<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
+			<Vars VarGrpType="1">
+				<Name>PlcTask Inputs</Name>
+				<Var>
+					<Name>MAIN.PDxx.stPDOs.TxPDO_1_6041h_StatusWord</Name>
+					<Type>UINT</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.PDxx.stPDOs.TxPDO_1_6061h_ModesOfOperationDisplay</Name>
+					<Type>SINT</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.PDxx.stPDOs.TxPDO_2_6064h_PositionActualValue</Name>
+					<Type>DINT</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.PDxx.stPDOs.TxPDO_3_6044h_VelocityActualValue</Name>
+					<Type>INT</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.PDxx.stPDOs.TxPDO_4_60FDh_DigitalInputs</Name>
+					<Type>UDINT</Type>
+				</Var>
+			</Vars>
+			<Vars VarGrpType="2" AreaNo="1">
+				<Name>PlcTask Outputs</Name>
+				<Var>
+					<Name>MAIN.PDxx.stPDOs.RxPDO_1_6040h_ControlWord</Name>
+					<Type>UINT</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.PDxx.stPDOs.RxPDO_1_6060h_ModesOfOperation</Name>
+					<Type>SINT</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.PDxx.stPDOs.RxPDO_1_3202h_MotorDriveSubmodeSelect</Name>
+					<Type>UDINT</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.PDxx.stPDOs.RxPDO_2_607Ah_TargetPosition</Name>
+					<Type>DINT</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.PDxx.stPDOs.RxPDO_2_6081h_ProfileVelocity</Name>
+					<Type>UDINT</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.PDxx.stPDOs.RxPDO_3_6042h_TargetVelocity</Name>
+					<Type>INT</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.PDxx.stPDOs.RxPDO_4_60FEh_DigitalOutputs</Name>
+					<Type>UDINT</Type>
+				</Var>
+			</Vars>
 			<Contexts>
 				<Context>
-					<Id>1</Id>
-					<Name>Default</Name>
+					<Id>0</Id>
+					<Name>PlcTask</Name>
+					<ManualConfig>
+						<OTCID>#x02010030</OTCID>
+					</ManualConfig>
+					<Priority>20</Priority>
+					<CycleTime>10000000</CycleTime>
 				</Context>
 			</Contexts>
+			<TaskPouOids>
+				<TaskPouOid Prio="20" OTCID="#x08502001"/>
+			</TaskPouOids>
 		</Instance>
 	</Project>
 </TcSmItem>

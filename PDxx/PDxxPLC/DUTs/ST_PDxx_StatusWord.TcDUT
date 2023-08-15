@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_PDxx_StatusWord" Id="{c942f27e-cf19-447d-bbda-f1cefa42b7da}">
+    <Declaration><![CDATA[TYPE ST_PDxx_StatusWord :
+STRUCT
+	ReadyToSwitchOn		: BOOL; // Value = "1": Controller is in the "Ready to Switch On" state (dependent on other bits, see following bit mask)
+	SwitchedOn 			: BOOL; // Value = "1": Controller is in the "Switched On" state (dependent on other bits, see following bit mask)
+	OperationEnabled	: BOOL; // Value = "1": Controller is in the "Operation Enabled" state (dependent on other bits, see following bit mask)
+	Fault				: BOOL; // Error occurred
+	VoltageEnabled		: BOOL; // Voltage applied
+	QuickStop			: BOOL; // Value = "0": Controller is in the "Quick Stop" state (dependent on other bits, see following bit mask)
+	SwitchOnDisabled	: BOOL;	// Value = "1": Controller is in the "Switched On Disabled" state (dependent on other bits, see following bit mask)
+	Warning				: BOOL;	// Value = "1": Warning
+	Synchronization		: BOOL;	// Value = "1": Controller is in sync with the fieldbus; value = "0": Controller is not in sync with the fieldbus
+	Remote				: BOOL;	// Remote (value of the bit is always "1")
+	TargetReached		: BOOL; // Target reached
+	InternalLimitReached: BOOL;	// Limit exceeded
+	OperationModeSpecific_bit12: BOOL; // Meaning is dependent on the selected operating mode
+	OperationModeSpecific_bit13: BOOL; // Meaning is dependent on the selected operating mode
+	ClosedLoopAvailable	: BOOL; // Value = "1": Auto setup was successful and encoder index seen: closed loop mode possible
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

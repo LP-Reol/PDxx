@@ -1,0 +1,966 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_PDxx" Id="{97c1bf8a-88d3-43c0-aca9-b8d8817bfdd0}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PDxx
+
+VAR_INPUT
+	eState : E_PDxx_State;
+	eModesOfOperation : E_PDxx_ModesOfOperation;
+
+	bStandAloneTesting 				: BOOL 		:= FALSE;
+	eStandAloneTestState			: E_PDxx_State;
+	eStandAloneTestModesOfOperation	: E_PDxx_ModesOfOperation;
+	bStandAloneTestSendTarget		: BOOL 		:= 0;
+	bStandAloneTestSendTargetSuccess: BOOL;
+	
+	stCANopenDevice : ST_CANopenDevice;
+
+	fbSdoMaxCurrent					: FB_SDO	:= (CO_Index:=16#2031, CO_SubIndex:=16#0, DataLength:=4, 	CO_Name:='Maximum Current', 		stCANopenDevice:=stCANopenDevice);
+	fbSdoMaxCurrentValue 			: UDINT;
+
+//	fbSdoPolarity					: FB_SDO	:= (CO_Index:=16#607E, CO_SubIndex:=16#0, DataLength:=1, 	CO_Name:='Polarity', 				stCANopenDevice:=fbEL6751);
+//	fbSdoPolarityValue				: USINT;
+
+	fbSdoSpecialFunctionEnable		: FB_SDO	:= (CO_Index:=16#3040, CO_SubIndex:=16#1, DataLength:=4, 	CO_Name:='Special Function Enable',	stCANopenDevice:=stCANopenDevice);
+	fbSdoSpecialFunctionEnableValue	: UDINT;
+
+	fbSdoFunctionInverted			: FB_SDO	:= (CO_Index:=16#3040, CO_SubIndex:=16#2, DataLength:=4, 	CO_Name:='Function Inverted',		stCANopenDevice:=stCANopenDevice);
+	fbSdoFunctionInvertedValue		: UDINT;
+	
+	fbSdoInputRangeSelect			: FB_SDO	:= (CO_Index:=16#3040, CO_SubIndex:=16#6, DataLength:=4, 	CO_Name:='Input Range Select',		stCANopenDevice:=stCANopenDevice);
+	fbSdoInputRangeSelectValue		: UDINT;
+	
+	fbSdoFeed						: FB_SDO	:= (CO_Index:=16#6092, CO_SubIndex:=16#1, DataLength:=4, 	CO_Name:='Feed', 					stCANopenDevice:=stCANopenDevice);
+	fbSdoFeedValue					: UDINT;
+
+	fbSdoShaftRevolutions			: FB_SDO	:= (CO_Index:=16#6092, CO_SubIndex:=16#2, DataLength:=4, 	CO_Name:='Shaft Revolutions', 		stCANopenDevice:=stCANopenDevice);
+	fbSdoShaftRevolutionsValue		: UDINT;
+	
+	fbSdoEncoderIncrements			: FB_SDO	:= (CO_Index:=16#608F, CO_SubIndex:=16#1, DataLength:=4, 	CO_Name:='Encoder Increments', 		stCANopenDevice:=stCANopenDevice);
+	fbSdoEncoderIncrementsValue		: UDINT;
+
+	fbSdoMotorRevolutions			: FB_SDO	:= (CO_Index:=16#608F, CO_SubIndex:=16#2, DataLength:=4, 	CO_Name:='Motor Revolutions', 		stCANopenDevice:=stCANopenDevice);
+	fbSdoMotorRevolutionsValue		: UDINT;
+	
+	fbSdoSIUnitPosition				: FB_SDO	:= (CO_Index:=16#60A8, CO_SubIndex:=16#0, DataLength:=4, 	CO_Name:='SI Unit Position', 		stCANopenDevice:=stCANopenDevice);
+	fbSdoSIUnitPositionValue		: UDINT;
+END_VAR
+
+VAR_OUTPUT
+	Status						: ST_PDxx_Status;
+END_VAR
+
+VAR
+	stPDOs : ST_PDxx_RxTxPDOs := (
+		RxPDO_1_3202h_MotorDriveSubmodeSelect 	:= 16#00000001, // default to closed loop
+		RxPDO_2_6081h_ProfileVelocity 			:= 16#000001F4 // default to 500 RPM
+	);
+	
+	stIO : ST_PDxx_IO;
+	
+	stStatusWord : ST_PDxx_StatusWord;
+	stControlWord : ST_PDxx_ControlWord;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CheckState();
+CheckModesOfOperation();
+CheckDigitalInputs();
+ResetControlWordBit4();
+
+
+IF bStandAloneTesting = TRUE THEN
+	IF eModesOfOperation <> eStandAloneTestModesOfOperation THEN
+		ChangeModesOfOperation(eModesOfOperation := eStandAloneTestModesOfOperation);
+	END_IF
+	
+	IF eState <> eStandAloneTestState THEN
+		ChangeState(eRequestedState := eStandAloneTestState);
+	END_IF
+	
+	IF bStandAloneTestSendTarget THEN
+		bStandAloneTestSendTargetSuccess := StartMoveToTargetPosition();
+		bStandAloneTestSendTarget := FALSE;
+	END_IF	
+END_IF
+]]></ST>
+    </Implementation>
+    <Method Name="ChangeModesOfOperation" Id="{a66c7fe5-131f-486e-b2a0-c20427a2d825}">
+      <Declaration><![CDATA[METHOD ChangeModesOfOperation : BOOL
+VAR_INPUT
+	eModesOfOperation : E_PDxx_ModesOfOperation;
+END_VAR
+VAR
+	ModesOfOperation : SINT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE eModesOfOperation OF
+	
+	E_PDxx_ModesOfOperation.AUTO_SETUP:
+		ModesOfOperation := -2;
+	E_PDxx_ModesOfOperation.CLOCK_DIRECTION_MODE:
+		ModesOfOperation := -1;
+	E_PDxx_ModesOfOperation.NO_MODE_CHANGE_OR_NO_MODE_ASSIGNED:
+		ModesOfOperation := 0;
+	E_PDxx_ModesOfOperation.PROFILE_POSITION_MODE:
+		ModesOfOperation := 1;
+	E_PDxx_ModesOfOperation.VELOCITY_MODE:
+		ModesOfOperation := 2;
+	E_PDxx_ModesOfOperation.PROFILE_VELOCITY_MODE:
+		ModesOfOperation := 3;
+	E_PDxx_ModesOfOperation.PROFILE_TORQUE_MODE:
+		ModesOfOperation := 4;
+	E_PDxx_ModesOfOperation.RESERVED:
+		ModesOfOperation := 5;
+	E_PDxx_ModesOfOperation.HOMING_MODE:
+		ModesOfOperation := 6;
+	E_PDxx_ModesOfOperation.INTERPOLATED_POSITION_MODE:
+		ModesOfOperation := 7;
+	E_PDxx_ModesOfOperation.CYCLIC_SYNCHRONOUS_POSITION_MODE:
+		ModesOfOperation := 8;
+	E_PDxx_ModesOfOperation.CYCLIC_SYNCHRONOUS_VELOCITY_MODE:
+		ModesOfOperation := 9;
+	E_PDxx_ModesOfOperation.CYCLIC_SYNCHRONOUS_TORQUE_MODE:	
+		ModesOfOperation := 10;
+ELSE
+	ChangeModesOfOperation := FALSE;
+	RETURN;
+
+END_CASE
+
+stPDOs.RxPDO_1_6060h_ModesOfOperation := ModesOfOperation;
+ChangeModesOfOperation := TRUE;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ChangeState" Id="{2e7dd50b-a0b5-4240-8b00-b1ed2ea220f7}">
+      <Declaration><![CDATA[METHOD ChangeState : BOOL
+VAR_INPUT
+	eRequestedState : E_PDxx_State; 
+END_VAR
+VAR
+	ControlWord : UINT;
+END_VAR
+
+
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[ControlWord := 0;
+
+// We check first if we need to recover from a Fault state
+IF eState = E_PDxx_State.FAULT AND eState <> eRequestedState THEN
+	stControlWord.FaultReset_bit_7		:= TRUE;	// "Fault reset" transition 13
+	ControlWord.7 := stControlWord.FaultReset_bit_7;
+	stPDOs.RxPDO_1_6040h_ControlWord := ControlWord;
+	RETURN;
+END_IF
+
+(* All of the below cases are taken from the transistion diagram on p. 34 in the manual *)
+
+CASE eRequestedState OF
+
+	// E_PD2C_State.NOT_READY_TO_SWITCH_ON:
+		// Can not be triggered from software
+
+	E_PDxx_State.SWITCH_ON_DISABLED: 			// "Disable Voltage" transitions 6, 7, 9, 12 
+		stControlWord.EnableVoltage_bit_1	:= FALSE;
+		stControlWord.FaultReset_bit_7		:= FALSE;
+		
+	E_PDxx_State.READY_TO_SWITCH_ON: 			// "Shutdown" transitions 1, 5, 8 
+		stControlWord.SwitchedOn_bit_0		:= FALSE;
+		stControlWord.EnableVoltage_bit_1	:= TRUE;
+		stControlWord.QuickStop_bit_2		:= TRUE; // Quick stop is Active Low
+		stControlWord.FaultReset_bit_7		:= FALSE;
+
+	E_PDxx_State.SWITCHED_ON:					// "Switch On" and "Diable operation" transitions 2, 4 
+		stControlWord.SwitchedOn_bit_0		:= TRUE;
+		stControlWord.EnableVoltage_bit_1	:= TRUE;
+		stControlWord.QuickStop_bit_2		:= TRUE; // Quick stop is Active Low
+		stControlWord.EnableOperation_bit_3	:= FALSE;
+		stControlWord.FaultReset_bit_7		:= FALSE;
+
+	E_PDxx_State.OPERATION_ENABLED: 				// "Enable operation" transition 3
+		stControlWord.SwitchedOn_bit_0		:= TRUE;
+		stControlWord.EnableVoltage_bit_1	:= TRUE;
+		stControlWord.QuickStop_bit_2		:= TRUE; // Quick stop is Active Low
+		stControlWord.EnableOperation_bit_3	:= TRUE;
+		stControlWord.FaultReset_bit_7		:= FALSE;
+
+	E_PDxx_State.QUICK_STOP_ACTIVE: 				// "Quick stop" transition 10 
+		stControlWord.EnableVoltage_bit_1	:= TRUE;
+		stControlWord.QuickStop_bit_2		:= FALSE; // Quick stop is Active Low
+		stControlWord.FaultReset_bit_7		:= FALSE;
+
+	// E_PD2C_State.FAULT_REACTION_ACTIVE:
+		// Can not be triggered by software
+	// E_PD2C_State.FAULT:
+		// Can not be triggered by software
+
+END_CASE
+
+stControlWord.eState						:= eRequestedState;
+
+ControlWord.0 := stControlWord.SwitchedOn_bit_0;
+ControlWord.1 := stControlWord.EnableVoltage_bit_1;
+ControlWord.2 := stControlWord.QuickStop_bit_2;
+ControlWord.3 := stControlWord.EnableOperation_bit_3;
+ControlWord.4 := stControlWord.OperationModeSpecific_bit_4;
+ControlWord.5 := stControlWord.OperationModeSpecific_bit_5;
+ControlWord.6 := stControlWord.OperationModeSpecific_bit_6;
+ControlWord.7 := stControlWord.FaultReset_bit_7;
+ControlWord.8 := stControlWord.Halt_bit_8;
+ControlWord.9 := stControlWord.OperationModeSpecific_bit_9;
+
+stPDOs.RxPDO_1_6040h_ControlWord := ControlWord;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="CheckDigitalInputs" Id="{764ac2e5-936c-433a-b34f-3247bcd9322b}">
+      <Declaration><![CDATA[METHOD PUBLIC CheckDigitalInputs
+VAR
+	i : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[stIO.InputNegativeLimitSwitch	:= stPDOs.TxPDO_4_60FDh_DigitalInputs.1;
+stIO.InputPositiveLimitSwitch	:= stPDOs.TxPDO_4_60FDh_DigitalInputs.2;
+stIO.InputHomeSwitch			:= stPDOs.TxPDO_4_60FDh_DigitalInputs.3;
+stIO.Input1 := stPDOs.TxPDO_4_60FDh_DigitalInputs.16;
+stIO.Input2 := stPDOs.TxPDO_4_60FDh_DigitalInputs.17;
+stIO.Input3 := stPDOs.TxPDO_4_60FDh_DigitalInputs.18;
+stIO.Input4 := stPDOs.TxPDO_4_60FDh_DigitalInputs.19;
+stIO.Input5 := stPDOs.TxPDO_4_60FDh_DigitalInputs.20;
+stIO.Input6 := stPDOs.TxPDO_4_60FDh_DigitalInputs.21;
+stIO.Input7 := stPDOs.TxPDO_4_60FDh_DigitalInputs.22;
+stIO.Input8 := stPDOs.TxPDO_4_60FDh_DigitalInputs.23;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="CheckModesOfOperation" Id="{94831596-bfdf-47dc-8611-97676ea87e3d}">
+      <Declaration><![CDATA[METHOD PUBLIC CheckModesOfOperation : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE stPDOs.TxPDO_1_6061h_ModesOfOperationDisplay OF
+	
+	-2:
+		eModesOfOperation := E_PDxx_ModesOfOperation.AUTO_SETUP;
+	-1:
+		eModesOfOperation := E_PDxx_ModesOfOperation.CLOCK_DIRECTION_MODE;
+	0:
+		eModesOfOperation := E_PDxx_ModesOfOperation.NO_MODE_CHANGE_OR_NO_MODE_ASSIGNED;
+	1:
+		eModesOfOperation := E_PDxx_ModesOfOperation.PROFILE_POSITION_MODE;
+	2:
+		eModesOfOperation := E_PDxx_ModesOfOperation.VELOCITY_MODE;
+	3:
+		eModesOfOperation := E_PDxx_ModesOfOperation.PROFILE_VELOCITY_MODE;
+	4:
+		eModesOfOperation := E_PDxx_ModesOfOperation.PROFILE_TORQUE_MODE;
+	5:
+		eModesOfOperation := E_PDxx_ModesOfOperation.RESERVED;
+	6:
+		eModesOfOperation := E_PDxx_ModesOfOperation.HOMING_MODE;
+	7:
+		eModesOfOperation := E_PDxx_ModesOfOperation.INTERPOLATED_POSITION_MODE;
+	8:
+		eModesOfOperation := E_PDxx_ModesOfOperation.CYCLIC_SYNCHRONOUS_POSITION_MODE;
+	9:
+		eModesOfOperation := E_PDxx_ModesOfOperation.CYCLIC_SYNCHRONOUS_VELOCITY_MODE;
+	10:
+		eModesOfOperation := E_PDxx_ModesOfOperation.CYCLIC_SYNCHRONOUS_TORQUE_MODE;	
+
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="CheckState" Id="{96c2d250-0dab-456b-9546-3e6c1922a47a}">
+      <Declaration><![CDATA[METHOD PUBLIC CheckState
+(* Following comments are from PD2-C manual, section "6041h Statusword" on p. 279-280 *)
+VAR
+	LowerNibble : BYTE; // 4 bit container to hold the combination of RTSO, SO, OE and FAULT bits. Highest 4 bit in the BYTE should always be zero.
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[stStatusWord.ReadyToSwitchOn				:= stPDOs.TxPDO_1_6041h_StatusWord.0;
+stStatusWord.SwitchedOn						:= stPDOs.TxPDO_1_6041h_StatusWord.1;
+stStatusWord.OperationEnabled				:= stPDOs.TxPDO_1_6041h_StatusWord.2;
+stStatusWord.Fault							:= stPDOs.TxPDO_1_6041h_StatusWord.3;
+stStatusWord.VoltageEnabled					:= stPDOs.TxPDO_1_6041h_StatusWord.4;
+stStatusWord.QuickStop						:= stPDOs.TxPDO_1_6041h_StatusWord.5;
+stStatusWord.SwitchOnDisabled				:= stPDOs.TxPDO_1_6041h_StatusWord.6;
+stStatusWord.Warning						:= stPDOs.TxPDO_1_6041h_StatusWord.7;
+stStatusWord.Synchronization				:= stPDOs.TxPDO_1_6041h_StatusWord.8;
+stStatusWord.Remote							:= stPDOs.TxPDO_1_6041h_StatusWord.9;
+stStatusWord.TargetReached 					:= stPDOs.TxPDO_1_6041h_StatusWord.10;
+stStatusWord.InternalLimitReached			:= stPDOs.TxPDO_1_6041h_StatusWord.11;
+stStatusWord.OperationModeSpecific_bit12	:= stPDOs.TxPDO_1_6041h_StatusWord.12;
+stStatusWord.OperationModeSpecific_bit13	:= stPDOs.TxPDO_1_6041h_StatusWord.13;
+stStatusWord.ClosedLoopAvailable			:= stPDOs.TxPDO_1_6041h_StatusWord.15;
+
+LowerNibble 	:= 0;
+LowerNibble.0	:= stPDOs.TxPDO_1_6041h_StatusWord.0;
+LowerNibble.1	:= stPDOs.TxPDO_1_6041h_StatusWord.1;
+LowerNibble.2	:= stPDOs.TxPDO_1_6041h_StatusWord.2;
+LowerNibble.3	:= stPDOs.TxPDO_1_6041h_StatusWord.3;
+
+(* Listed in the following table are the bit masks that break down the state of the controller
+xxxx xxxx x0xx 0000 Not ready to switch on
+xxxx xxxx x1xx 0000 Switch on disabled
+xxxx xxxx x01x 0001 Ready to switch on
+xxxx xxxx x01x 0011 Switched on
+xxxx xxxx x01x 0111 Operation enabled
+xxxx xxxx x00x 0111 Quick stop active
+xxxx xxxx x0xx 1111 Fault reaction active
+xxxx xxxx x0xx 1000 Fault
+*)
+
+IF 		NOT stStatusWord.SwitchOnDisabled 									AND LowerNibble = 2#0000 THEN 	eState := E_PDxx_State.NOT_READY_TO_SWITCH_ON;
+ELSIF  		stStatusWord.SwitchOnDisabled 									AND LowerNibble = 2#0000 THEN	eState := E_PDxx_State.SWITCH_ON_DISABLED;
+ELSIF 	NOT stStatusWord.SwitchOnDisabled AND 		stStatusWord.QuickStop 	AND LowerNibble = 2#0001 THEN	eState := E_PDxx_State.READY_TO_SWITCH_ON;
+ELSIF 	NOT stStatusWord.SwitchOnDisabled AND 		stStatusWord.QuickStop 	AND LowerNibble = 2#0011 THEN	eState := E_PDxx_State.SWITCHED_ON;
+ELSIF 	NOT stStatusWord.SwitchOnDisabled AND 		stStatusWord.QuickStop	AND LowerNibble = 2#0111 THEN	eState := E_PDxx_State.OPERATION_ENABLED;
+ELSIF 	NOT stStatusWord.SwitchOnDisabled AND NOT 	stStatusWord.QuickStop 	AND LowerNibble = 2#0111 THEN	eState := E_PDxx_State.QUICK_STOP_ACTIVE;
+ELSIF 	NOT stStatusWord.SwitchOnDisabled									AND LowerNibble = 2#1111 THEN	eState := E_PDxx_State.FAULT_REACTION_ACTIVE;
+ELSIF 	NOT stStatusWord.SwitchOnDisabled									AND LowerNibble = 2#1000 THEN	eState := E_PDxx_State.FAULT;
+ELSE																										eState := E_PDxx_State.UNKNOWN_STATE;	
+END_IF
+
+Status.nCurrentPosition := GetPosition();
+Status.nCurrentVelocity := GetVelocity();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="EnableOperation" Id="{9324d522-180b-4f4d-94cf-c6b1bddf228a}">
+      <Declaration><![CDATA[METHOD PUBLIC EnableOperation : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE eState OF
+	E_PDxx_State.SWITCH_ON_DISABLED:
+		ChangeState(E_PDxx_State.READY_TO_SWITCH_ON);
+		ChangeModesOfOperation(E_PDxx_ModesOfOperation.PROFILE_POSITION_MODE);				
+	E_PDxx_State.READY_TO_SWITCH_ON:
+		ChangeState(E_PDxx_State.SWITCHED_ON);
+	E_PDxx_State.SWITCHED_ON:
+		ChangeState(E_PDxx_State.OPERATION_ENABLED);
+END_CASE
+
+IF eState = E_PDxx_State.OPERATION_ENABLED AND 
+eModesOfOperation = E_PDxx_ModesOfOperation.PROFILE_POSITION_MODE THEN
+	EnableOperation := TRUE;
+ELSE
+	EnableOperation := FALSE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetActualPosition" Id="{543d8550-fccf-4335-ad8d-a3615b90e946}">
+      <Declaration><![CDATA[METHOD PUBLIC GetActualPosition : DINT
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetActualPosition := stPDOs.TxPDO_2_6064h_PositionActualValue;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetActualPositionFromNormalisedPosition" Id="{e0deab0b-ba60-4ecd-82fa-36f50cadbd15}">
+      <Declaration><![CDATA[METHOD PRIVATE GetActualPositionFromNormalisedPosition : DINT
+VAR_INPUT
+	nNormalisedPosition : DINT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF Status.bReversePolarity = TRUE THEN
+	GetActualPositionFromNormalisedPosition := Status.nMaxActualPosition - nNormalisedPosition;
+ELSE
+	GetActualPositionFromNormalisedPosition := nNormalisedPosition + Status.nMinActualPosition;	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetCurrent" Id="{d2d5fe39-e8bf-432c-a2aa-034a4054b5b2}">
+      <Declaration><![CDATA[METHOD PUBLIC GetCurrent : UDINT
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetCurrent := fbSdoMaxCurrentValue;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetDigitalInputs" Id="{c03f49bc-fcd9-454e-a7e3-bee99b831014}">
+      <Declaration><![CDATA[METHOD PUBLIC GetDigitalInputs
+VAR_OUTPUT
+	stDigitalInputs : ST_PDxx_IO;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[stDigitalInputs := stIO;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetNormalisedPositionFromActualPosition" Id="{e0a4b0fb-f680-4797-8bce-845d68c771a0}">
+      <Declaration><![CDATA[METHOD PRIVATE GetNormalisedPositionFromActualPosition : DINT
+VAR_INPUT
+	nActualPosition : DINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF Status.bReversePolarity = TRUE THEN
+	GetNormalisedPositionFromActualPosition := Status.nMaxActualPosition - nActualPosition;
+ELSE
+	GetNormalisedPositionFromActualPosition := nActualPosition - Status.nMinActualPosition;	
+END_IF
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetPosition" Id="{c854ee10-c90a-417e-b599-458dde494f4b}">
+      <Declaration><![CDATA[METHOD PUBLIC GetPosition : DINT
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetPosition := GetNormalisedPositionFromActualPosition(stPDOs.TxPDO_2_6064h_PositionActualValue);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetVelocity" Id="{b16a86ce-6a26-43de-a70a-e12ff35a8ecc}">
+      <Declaration><![CDATA[METHOD PUBLIC GetVelocity : INT]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF Status.bReversePolarity = TRUE THEN
+	 GetVelocity := -stPDOs.RxPDO_3_6042h_TargetVelocity;
+ELSE
+	GetVelocity := stPDOs.RxPDO_3_6042h_TargetVelocity;	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GoToTargetPosition" Id="{fffaf304-1f67-4aac-a78b-ec3d4b977155}">
+      <Declaration><![CDATA[METHOD PUBLIC GoToTargetPosition : DINT
+VAR_INPUT
+	nPosition 	: DINT;
+	nVelocity	: INT;
+	nMaxCurrent	: UDINT;
+END_VAR
+VAR_INST
+	bTrig 		: BOOL	:= FALSE;
+	diff 		: DINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[diff := GetPosition() - nPosition;
+IF diff = 0 THEN
+	bTrig := FALSE;
+ELSIF SetTargetPosition(nRequestedPosition := nPosition) = TRUE THEN
+	bTrig := StartMoveToTargetPosition();
+ELSE
+	// This never happens at the moment,  but kept it here as reminder if the ELSIF statement above starts returning false.
+	bTrig := FALSE;
+END_IF
+
+GoToTargetPosition := diff;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GripThickness" Id="{ed44aca6-2c4f-4012-973a-268d86aa1785}">
+      <Declaration><![CDATA[METHOD PUBLIC GripThickness : DINT
+VAR_INPUT
+	nObjectThickness 	: DINT;
+	nVelocity			: INT;
+	nMaxCurrent			: UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF fbSdoMaxCurrentValue <> nMaxCurrent THEN
+	SetMaxCurrent(nMaxCurrent);
+ELSE
+	IF SetVelocityMode() THEN
+		SetVelocity(-nVelocity); // It is negative because we want to move towards the closed position zero point from a positive valued open gripper.
+	END_IF	
+END_IF
+
+GripThickness := GetPosition() - nObjectThickness;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="IsPolarityReversed" Id="{a5713215-30ba-44d9-b555-8e0b0da41848}">
+      <Declaration><![CDATA[METHOD PUBLIC IsPolarityReversed : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IsPolarityReversed := Status.bReversePolarity;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ProbeActualPositionLimits" Id="{7c7a05fe-7539-41c4-b37c-8f8bb00e3d51}">
+      <Declaration><![CDATA[METHOD PUBLIC ProbeActualPositionLimits : BOOL
+VAR_INPUT
+	nVelocity : INT;
+END_VAR
+
+VAR
+	nActualVelocity			: INT;
+	nMinStartActualPosition : DINT;
+	nMaxStartActualPosition : DINT;
+	nActualPosition			: DINT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[(* 	Returns true whenever the method was able to push past
+	one of the limits. External function can monitor how 
+	long this method has returned FALSE, in order to 
+	determine whether a end limit has been found. *)
+
+IF SetVelocityMode() THEN
+	SetVelocity(nVelocity);
+ELSE
+	Status.nMaxActualPosition := GetActualPosition();
+	Status.nMinActualPosition := GetActualPosition();
+	nMaxStartActualPosition := Status.nMaxActualPosition;
+	nMinStartActualPosition := Status.nMinActualPosition;
+	ProbeActualPositionLimits := TRUE;
+END_IF
+
+//IF IsPolarityReversed() = TRUE THEN
+IF Status.bReversePolarity = TRUE THEN
+	nActualVelocity := -nVelocity;
+ELSE
+	nActualVelocity := nVelocity;
+END_IF
+
+nActualPosition := GetActualPosition();
+
+IF nActualVelocity > 0 AND nActualPosition > Status.nMaxActualPosition THEN
+	Status.nMaxActualPosition := nActualPosition;
+	ProbeActualPositionLimits := TRUE;
+ELSIF nActualVelocity < 0 AND nActualPosition < Status.nMinActualPosition THEN
+	Status.nMinActualPosition := nActualPosition;
+	ProbeActualPositionLimits := TRUE;
+ELSE
+	IF (nActualVelocity > 0 AND nActualPosition > nMaxStartActualPosition) OR
+	   (nActualVelocity < 0 AND nActualPosition < nMinStartActualPosition) THEN
+		ProbeActualPositionLimits := FALSE;
+	ELSE
+		ProbeActualPositionLimits := TRUE;		
+	END_IF
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ReleaseGripToThicknessMargin" Id="{bac69037-d9ae-4417-875b-6060a2afe036}">
+      <Declaration><![CDATA[METHOD PUBLIC ReleaseGripToThicknessMargin : DINT
+VAR_INPUT
+	nObjectThickness 		: DINT;
+	nObjectReleaseMargin	: DINT;
+	nVelocity				: INT;
+	nMaxCurrent				: UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[ReleaseGripToThicknessMargin := GoToTargetPosition(	nPosition 	:= nObjectThickness + nObjectReleaseMargin,
+													nVelocity 	:= nVelocity,
+													nMaxCurrent	:= nMaxCurrent);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ResetControlWordBit4" Id="{fc92a71a-2d31-4fca-991a-9704be85d5f4}">
+      <Declaration><![CDATA[METHOD PRIVATE ResetControlWordBit4 : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF stStatusWord.OperationModeSpecific_bit12 THEN
+	IF 	eState = E_PDxx_State.OPERATION_ENABLED AND 
+		eModesOfOperation = E_PDxx_ModesOfOperation.PROFILE_POSITION_MODE THEN
+		stControlWord.OperationModeSpecific_bit_4 := FALSE;
+		stPDOs.RxPDO_1_6040h_ControlWord.4 := stControlWord.OperationModeSpecific_bit_4;	
+	END_IF
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetFeedRate" Id="{79fcd9ec-e2b4-40e7-ad3c-bab41240745a}">
+      <Declaration><![CDATA[METHOD PUBLIC SetFeedRate : BOOL
+VAR_INPUT
+	nFeedRate				: UDINT;
+	nDivisor				: UDINT;
+END_VAR
+VAR
+	nFeed					: UDINT;
+	nShaftRevolutions		: UDINT;
+END_VAR
+VAR_INST
+	bEncoderIncrementsRead	: BOOL := FALSE;
+	bMotorRevolutionsRead	: BOOL := FALSE;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+fbSdoEncoderIncrements(bStartReading := TRUE);
+IF fbSdoEncoderIncrements.ReadDataAvailable THEN
+	fbSdoEncoderIncrementsValue := fbSdoEncoderIncrements.GetReadDataAsUDINT();
+	bEncoderIncrementsRead := TRUE;
+END_IF
+
+fbSdoMotorRevolutions(bStartReading := TRUE);
+IF fbSdoMotorRevolutions.ReadDataAvailable THEN
+	fbSdoMotorRevolutionsValue := fbSdoMotorRevolutions.GetReadDataAsUDINT();
+	bMotorRevolutionsRead := TRUE;
+END_IF
+
+IF bEncoderIncrementsRead AND bMotorRevolutionsRead THEN
+	nFeed := nFeedRate;// * fbSdoMotorRevolutionsValue; // commented out part was clashing with SetSIUnitPosition on PD4-E
+	nShaftRevolutions := nDivisor;// * fbSdoEncoderIncrementsValue;  // commented out part was clashing with SetSIUnitPosition on PD4-E
+  
+	fbSdoFeed.SetWriteDataFromUDINT(nFeed);
+	fbSdoFeed(bStartReading := TRUE);
+	
+	IF fbSdoFeed.ReadDataAvailable THEN
+		fbSdoFeedValue := fbSdoFeed.GetReadDataAsUDINT();
+	END_IF
+	
+	IF fbSdoFeedValue <> nFeed THEN
+		fbSdoFeed(bStartWriting := TRUE);
+	END_IF
+	
+	fbSdoShaftRevolutions.SetWriteDataFromUDINT(nShaftRevolutions);
+	fbSdoShaftRevolutions(bStartReading := TRUE, bStartWriting := TRUE);
+	
+	IF fbSdoShaftRevolutions.ReadDataAvailable THEN
+		fbSdoShaftRevolutionsValue := fbSdoShaftRevolutions.GetReadDataAsUDINT();
+	END_IF
+	
+	IF fbSdoShaftRevolutionsValue <> nShaftRevolutions THEN
+		fbSdoShaftRevolutions(bStartWriting := TRUE);
+	END_IF
+	
+	IF fbSdoFeedValue = nFeed AND
+		fbSdoShaftRevolutionsValue = nShaftRevolutions THEN
+		SetFeedRate := TRUE;
+	ELSE
+		SetFeedRate := FALSE;
+	END_IF
+END_IF
+
+//fbSdoFeed.SetWriteDataFromUDINT(nFeed);
+//fbSdoFeed(bStartReading := TRUE);
+
+//IF fbSdoFeed.ReadDataAvailable THEN
+//	fbSdoFeedValue := fbSdoFeed.GetReadDataAsUDINT();
+//END_IF
+
+//IF fbSdoFeedValue <> nFeedRate THEN
+//	fbSdoFeed(bStartWriting := TRUE);
+//END_IF
+
+//fbSdoShaftRevolutions.SetWriteDataFromUDINT(nShaftRevolutions);
+//fbSdoShaftRevolutions(bStartReading := TRUE, bStartWriting := TRUE);
+
+//IF fbSdoShaftRevolutions.ReadDataAvailable THEN
+//	fbSdoShaftRevolutionsValue := fbSdoShaftRevolutions.GetReadDataAsUDINT();
+//END_IF
+
+//IF fbSdoShaftRevolutionsValue <> nShaftRevolutions THEN
+//	fbSdoShaftRevolutions(bStartWriting := TRUE);
+//END_IF
+
+//IF fbSdoFeedValue = nFeedRate AND
+//	fbSdoShaftRevolutionsValue = nShaftRevolutions THEN
+//	SetFeedRate := TRUE;
+//ELSE
+//	SetFeedRate := FALSE;
+//END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetHomePosition" Id="{d2d368a4-483d-4f93-a912-a0a227961014}">
+      <Declaration><![CDATA[METHOD PUBLIC SetHomePosition
+VAR_INPUT
+	nPosition : DINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Status.nHomePosition := nPosition;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetMaxCurrent" Id="{6f3e6302-6186-4052-a68d-b49cf66746ab}">
+      <Declaration><![CDATA[METHOD PUBLIC SetMaxCurrent : BOOL
+VAR_INPUT
+	nMaxCurrent : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[fbSdoMaxCurrent.SetWriteDataFromUDINT(nMaxCurrent);
+fbSdoMaxCurrent(bStartReading := TRUE, bStartWriting := TRUE);
+IF fbSdoMaxCurrent.ReadDataAvailable THEN
+	fbSdoMaxCurrentValue := fbSdoMaxCurrent.GetReadDataAsUDINT();
+	SetMaxCurrent := TRUE;
+ELSE
+	SetMaxCurrent := FALSE;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetProfilePositionMode" Id="{a7c63646-1093-46a4-b078-f5fd8d829535}">
+      <Declaration><![CDATA[METHOD PUBLIC SetProfilePositionMode : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE eState OF
+	E_PDxx_State.SWITCH_ON_DISABLED,
+	E_PDxx_State.READY_TO_SWITCH_ON:
+		SwitchOnPowerToMotor();
+	E_PDxx_State.SWITCHED_ON:
+		IF eModesOfOperation <> E_PDxx_ModesOfOperation.PROFILE_POSITION_MODE THEN
+			ChangeModesOfOperation(E_PDxx_ModesOfOperation.PROFILE_POSITION_MODE);
+		ELSE
+			ChangeState(E_PDxx_State.OPERATION_ENABLED);
+		END_IF	
+	E_PDxx_State.OPERATION_ENABLED:
+		IF eModesOfOperation <> E_PDxx_ModesOfOperation.PROFILE_POSITION_MODE THEN
+			ChangeState(E_PDxx_State.SWITCHED_ON);			
+		END_IF
+END_CASE
+
+IF eState = E_PDxx_State.OPERATION_ENABLED AND 
+eModesOfOperation = E_PDxx_ModesOfOperation.PROFILE_POSITION_MODE THEN
+	SetProfilePositionMode := TRUE;
+ELSE
+	SetProfilePositionMode := FALSE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetRangeForDigitalInput" Id="{88afb56b-e19f-436e-99ed-ec7a8a68dc03}">
+      <Declaration><![CDATA[METHOD PUBLIC SetRangeForDigitalInput : BOOL
+VAR_INPUT
+	nInputNumber	: USINT;
+	bEnable24V		: BOOL;
+END_VAR
+
+VAR
+	bReadValue		: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[fbSdoInputRangeSelect(bStartReading := TRUE);
+
+IF fbSdoInputRangeSelect.ReadDataAvailable THEN
+	fbSdoInputRangeSelectValue := fbSdoInputRangeSelect.GetReadDataAsUDINT();
+	CASE nInputNumber OF
+		1:
+			bReadValue := fbSdoInputRangeSelectValue.0;
+		2:
+			bReadValue := fbSdoInputRangeSelectValue.1;
+		3:
+			bReadValue := fbSdoInputRangeSelectValue.2;
+		4:
+			bReadValue := fbSdoInputRangeSelectValue.3;
+	END_CASE
+	IF bReadValue <> bEnable24V THEN
+		CASE nInputNumber OF
+			1:
+				stIO.Input1_24V := bEnable24V;
+			2:
+				stIO.Input2_24V := bEnable24V;
+			3:
+				stIO.Input3_24V := bEnable24V;
+			4:
+				stIO.Input4_24V := bEnable24V;
+		END_CASE
+		fbSdoInputRangeSelectValue.0 := stIO.Input1_24V;
+		fbSdoInputRangeSelectValue.1 := stIO.Input2_24V;
+		fbSdoInputRangeSelectValue.2 := stIO.Input3_24V;
+		fbSdoInputRangeSelectValue.3 := stIO.Input4_24V;
+		fbSdoInputRangeSelectValue.4 := stIO.Input5_24V;
+		fbSdoInputRangeSelectValue.5 := stIO.Input6_24V;
+		fbSdoInputRangeSelectValue.6 := stIO.Input7_24V;
+		fbSdoInputRangeSelectValue.7 := stIO.Input8_24V;
+		
+		fbSdoInputRangeSelect(bStartReading := TRUE, bStartWriting := TRUE);
+		SetRangeForDigitalInput := FALSE;
+	ELSE
+		SetRangeForDigitalInput := TRUE;	
+	END_IF
+ELSE
+	SetRangeForDigitalInput := FALSE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetReversePolarity" Id="{298d3613-2cab-498e-bcc3-1696cbb6bf0a}">
+      <Declaration><![CDATA[METHOD PUBLIC SetReversePolarity : BOOL
+VAR_INPUT
+	bReversePositionAndVelocity : BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF stStatusWord.OperationEnabled THEN
+	SetReversePolarity := FALSE;
+ELSE
+	Status.bReversePolarity := bReversePositionAndVelocity;
+	SetReversePolarity := TRUE;	
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetSIUnitPosition" Id="{05381827-11a9-40a0-ac8c-587a5fd28299}">
+      <Declaration><![CDATA[METHOD PUBLIC SetSIUnitPosition : BOOL
+VAR_INPUT
+	nUnit					: USINT;
+	nFactor					: USINT;
+END_VAR
+VAR
+	nSIUnitPosition			: UDINT;
+//	bSIUnitPositionRead		: BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[nSIUnitPosition := nFactor;
+nSIUnitPosition := SHL(nSIUnitPosition, 8);
+nSIUnitPosition := nSIUnitPosition + nUnit;
+nSIUnitPosition := SHL(nSIUnitPosition, 16);
+
+fbSdoSIUnitPosition.SetWriteDataFromUDINT(nSIUnitPosition);
+fbSdoSIUnitPosition(bStartReading := TRUE, bStartWriting := TRUE);
+
+IF fbSdoSIUnitPosition.ReadDataAvailable THEN
+	fbSdoSIUnitPositionValue := fbSdoSIUnitPosition.GetReadDataAsUDINT();
+//	bSIUnitPositionRead := TRUE;
+END_IF
+	
+IF fbSdoSIUnitPositionValue = nSIUnitPosition THEN
+	SetSIUnitPosition := TRUE;
+ELSE
+	SetSIUnitPosition := FALSE;
+END_IF
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetTargetPosition" Id="{f21760ba-70aa-4b6c-acd5-a0513af7c792}">
+      <Declaration><![CDATA[METHOD PRIVATE SetTargetPosition : BOOL
+VAR_INPUT
+	nRequestedPosition : DINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF TRUE THEN
+// placeholder for making a boundary check or something before setting target position
+	Status.nTargetPosition := nRequestedPosition;
+	stPDOs.RxPDO_2_607Ah_TargetPosition := GetActualPositionFromNormalisedPosition(Status.nTargetPosition);
+	SetTargetPosition := TRUE;
+ELSE
+	SetTargetPosition := FALSE;
+END_IF
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetVelocity" Id="{58b76007-4f62-471c-9884-97a933b7dfae}">
+      <Declaration><![CDATA[METHOD PUBLIC SetVelocity
+VAR_INPUT
+	nVelocity : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF Status.bReversePolarity = TRUE THEN
+	stPDOs.RxPDO_3_6042h_TargetVelocity := -nVelocity;;
+ELSE
+	stPDOs.RxPDO_3_6042h_TargetVelocity := nVelocity;;	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetVelocityMode" Id="{7607b40a-e3b7-47b2-baab-3f29a9bd2310}">
+      <Declaration><![CDATA[METHOD PUBLIC SetVelocityMode : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE eState OF
+	E_PDxx_State.SWITCH_ON_DISABLED,
+	E_PDxx_State.READY_TO_SWITCH_ON,
+	E_PDxx_State.SWITCHED_ON:
+		SetVelocity(0);
+		IF eModesOfOperation <> E_PDxx_ModesOfOperation.VELOCITY_MODE THEN
+			ChangeModesOfOperation(E_PDxx_ModesOfOperation.VELOCITY_MODE);
+		ELSE
+			ChangeState(E_PDxx_State.OPERATION_ENABLED);
+		END_IF
+	E_PDxx_State.OPERATION_ENABLED:
+		IF eModesOfOperation <> E_PDxx_ModesOfOperation.VELOCITY_MODE THEN
+			ChangeState(E_PDxx_State.SWITCHED_ON);			
+		END_IF
+END_CASE
+
+IF eState = E_PDxx_State.OPERATION_ENABLED AND 
+eModesOfOperation = E_PDxx_ModesOfOperation.VELOCITY_MODE THEN
+	SetVelocityMode := TRUE;
+ELSE
+	SetVelocityMode := FALSE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetZeroPositionHere" Id="{a79052af-4720-4fa4-afe3-9067eb7e88c3}">
+      <Declaration><![CDATA[METHOD PUBLIC SetZeroPositionHere
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF Status.bReversePolarity = TRUE THEN
+	Status.nMaxActualPosition := GetActualPosition();
+ELSE
+	Status.nMinActualPosition := GetActualPosition();
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="StartMoveToTargetPosition" Id="{c8fd7a75-0d7b-48b7-b636-815edee44252}">
+      <Declaration><![CDATA[METHOD PRIVATE StartMoveToTargetPosition : BOOL
+
+VAR
+	ControlWord : UINT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF 	SetProfilePositionMode() THEN
+	
+	stControlWord.SwitchedOn_bit_0				:= TRUE;
+	stControlWord.EnableVoltage_bit_1			:= TRUE;
+	stControlWord.QuickStop_bit_2				:= TRUE; // Quick stop is Active Low
+	stControlWord.EnableOperation_bit_3			:= TRUE;
+	stControlWord.FaultReset_bit_7				:= FALSE;
+	stControlWord.OperationModeSpecific_bit_4	:= TRUE;
+	stControlWord.OperationModeSpecific_bit_5	:= FALSE;
+	stControlWord.OperationModeSpecific_bit_6	:= FALSE;
+	stControlWord.Halt_bit_8					:= FALSE;
+	stControlWord.OperationModeSpecific_bit_9	:= FALSE;
+	
+	ControlWord.0 := stControlWord.SwitchedOn_bit_0;
+	ControlWord.1 := stControlWord.EnableVoltage_bit_1;
+	ControlWord.2 := stControlWord.QuickStop_bit_2;
+	ControlWord.3 := stControlWord.EnableOperation_bit_3;
+	ControlWord.4 := stControlWord.OperationModeSpecific_bit_4;
+	ControlWord.5 := stControlWord.OperationModeSpecific_bit_5;
+	ControlWord.6 := stControlWord.OperationModeSpecific_bit_6;
+	ControlWord.7 := stControlWord.FaultReset_bit_7;
+	ControlWord.8 := stControlWord.Halt_bit_8;
+	ControlWord.9 := stControlWord.OperationModeSpecific_bit_9;
+	
+	stPDOs.RxPDO_1_6040h_ControlWord := ControlWord;
+	StartMoveToTargetPosition := TRUE;
+ELSE
+	StartMoveToTargetPosition := FALSE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SwitchOffPowerToMotor" Id="{a339521e-eb3c-45c7-8a6c-e40de0c3ba9b}">
+      <Declaration><![CDATA[METHOD PUBLIC SwitchOffPowerToMotor : BOOL]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE eState OF
+	E_PDxx_State.READY_TO_SWITCH_ON,
+	E_PDxx_State.SWITCHED_ON,	
+	E_PDxx_State.OPERATION_ENABLED:
+		ChangeState(E_PDxx_State.SWITCH_ON_DISABLED);
+END_CASE
+
+IF eState = E_PDxx_State.SWITCH_ON_DISABLED THEN
+	SwitchOffPowerToMotor := TRUE;
+ELSE
+	SwitchOffPowerToMotor := FALSE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SwitchOnPowerToMotor" Id="{ab619ce9-681c-4a72-a359-ec60b1e48cfc}">
+      <Declaration><![CDATA[METHOD PUBLIC SwitchOnPowerToMotor : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE eState OF
+	E_PDxx_State.SWITCH_ON_DISABLED:
+		ChangeState(E_PDxx_State.READY_TO_SWITCH_ON);
+	E_PDxx_State.READY_TO_SWITCH_ON:
+		ChangeState(E_PDxx_State.SWITCHED_ON);
+END_CASE
+
+IF eState = E_PDxx_State.SWITCHED_ON THEN
+	SwitchOnPowerToMotor := TRUE;
+ELSE
+	SwitchOnPowerToMotor := FALSE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

@@ -1,13 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1">
-  <POU Name="MAIN" Id="{a29f7abe-562f-42e7-8426-b06f74325e38}">
-    <Declaration><![CDATA[PROGRAM MAIN
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MAIN" Id="{a29f7abe-562f-42e7-8426-b06f74325e38}" SpecialFunc="None">
+    <Declaration><![CDATA[
+PROGRAM MAIN
 VAR
+	PDxx : FB_PDxx;
 END_VAR
-]]>
-    </Declaration>
+]]></Declaration>
     <Implementation>
-      <ST><![CDATA[]]></ST>
+      <ST><![CDATA[
+PDxx();
+]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

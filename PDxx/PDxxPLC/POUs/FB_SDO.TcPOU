@@ -1,0 +1,176 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_SDO" Id="{f43d99bc-fbd3-430f-b122-3078916312ee}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SDO
+VAR_INPUT
+	bStartReading	: BOOL;		(* only reset to FALSE after ReadDataAvailable=TRUE*)
+	bStartWriting	: BOOL;		(* only reset to FALSE after WriteDataFinished=TRUE*)
+END_VAR
+VAR
+	CO_Name			: STRING[255] := 'UNNAMED CANopen Object';
+	CO_Index		: DWORD;	(* This is the Index of the CANopen Object Dictionary Entry*)
+	CO_SubIndex		: DWORD;	(* This is the Sub-Index of the CANopen Object Dictionary Entry*)
+	DataLength		: DWORD;	(* This is the Length of the CANopen Object Dictionary Entry*)
+	stCANopenDevice	: REFERENCE TO ST_CANopenDevice;
+	ReadData		: ARRAY[0..255] OF BYTE;
+    WriteData		: ARRAY[0..255] OF BYTE; (* This array contains the data to be written to the CANopen Object Dictionary*)
+    ReadDataAvailable:BOOL;
+	WriteDataFinished:BOOL;
+    Error			: DWORD;
+    ReadState		: BYTE := 0;
+	WriteState		: BYTE := 0;
+    ADSRead 		: ADSREAD;
+	ADSWrite		: ADSWRITE;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CASE ReadState OF
+    0:
+        IF bStartReading THEN
+           ReadDataAvailable := FALSE;
+           Error := 0;
+           ADSRead(
+               NETID:= stCANopenDevice.AmsNetId,
+               PORT:= stCANopenDevice.PortNr,
+               IDXGRP:= CO_Index,
+               IDXOFFS:= CO_SubIndex,
+               LEN:= DataLength,
+               DESTADDR:= ADR(ReadData),
+               READ:= TRUE,
+               TMOUT := T#1s
+               );
+           IF ADSRead.err THEN
+               ReadState := 2;
+               ReadDataAvailable := TRUE;
+               Error := ADSRead.ErrId;
+           ELSE
+               ReadState := 1;
+           END_IF
+        ELSE
+           ADSRead(
+               NETID:= stCANopenDevice.AmsNetId,
+               PORT:= stCANopenDevice.PortNr,
+               IDXGRP:= CO_Index,
+               IDXOFFS:= CO_SubIndex,
+               LEN:= DataLength,
+               DESTADDR:= ADR(ReadData),
+               READ:= FALSE,
+               TMOUT := T#1s
+           );
+        END_IF
+    1:
+        ADSRead(READ:= FALSE);
+        IF ADSRead.err THEN
+           ReadState := 2;
+           ReadDataAvailable := TRUE;
+           Error := ADSRead.ErrId;
+        ELSE
+           IF NOT ADSRead.busy THEN
+               ReadState := 2;
+               ReadDataAvailable := TRUE;
+           END_IF
+        END_IF
+    2:
+        ADSRead(READ:= FALSE);
+		bStartReading := FALSE;
+        ReadState := 0;
+END_CASE
+
+CASE
+WriteState OF
+    0:
+        IF bStartWriting THEN
+           WriteDataFinished := FALSE;
+           Error := 0;
+           ADSWrite(
+               NETID:= stCANopenDevice.AmsNetId,
+               PORT:= stCANopenDevice.PortNr,
+               IDXGRP:= CO_Index,
+               IDXOFFS:= CO_SubIndex,
+               LEN:= DataLength,
+               SRCADDR:= ADR(WriteData),
+               WRITE:= TRUE,
+               TMOUT := T#1s
+               );
+           IF ADSWrite.err THEN
+               WriteState := 2;
+               WriteDataFinished := TRUE;
+               Error := ADSWrite.ErrId;
+           ELSE
+               WriteState := 1;
+           END_IF
+        ELSE
+           ADSWrite(
+               NETID:= '',
+               PORT:= stCANopenDevice.PortNr,
+               IDXGRP:= CO_Index,
+               IDXOFFS:= CO_SubIndex,
+               LEN:= DataLength,
+               SRCADDR:= ADR(WriteData),
+               WRITE:= FALSE,
+               TMOUT := T#1s
+               );
+        END_IF
+    1:
+        ADSWrite(WRITE:= FALSE);
+        IF ADSWrite.err THEN
+           WriteState := 2;
+           WriteDataFinished := TRUE;
+           Error := ADSWrite.ErrId;
+        ELSE
+           IF NOT ADSWrite.busy THEN
+               WriteState := 2;
+               WriteDataFinished := TRUE;
+           END_IF
+        END_IF
+    2:
+        ADSWrite(WRITE:= FALSE);
+		bStartWriting := FALSE;
+        WriteState := 0;
+END_CASE]]></ST>
+    </Implementation>
+    <Method Name="GetReadDataAsUDINT" Id="{645e70a0-5e8f-4b9e-815d-c424b9b327db}">
+      <Declaration><![CDATA[METHOD PUBLIC GetReadDataAsUDINT : UDINT
+VAR
+	temp : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[MEMCPY(destAddr:=ADR(temp), srcAddr:=ADR(ReadData), n:=SIZEOF(UDINT));
+GetReadDataAsUDINT := temp;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetReadDataAsUSINT" Id="{8bd0911b-ea5d-4276-97c2-3307396771ea}">
+      <Declaration><![CDATA[METHOD PUBLIC GetReadDataAsUSINT : USINT
+VAR
+	temp : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[MEMCPY(destAddr:=ADR(temp), srcAddr:=ADR(ReadData), n:=SIZEOF(USINT));
+GetReadDataAsUSINT := temp;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetWriteDataFromUDINT" Id="{cbfe4c06-d3cd-4bba-b7d6-08ab2537d0ba}">
+      <Declaration><![CDATA[METHOD PUBLIC SetWriteDataFromUDINT
+VAR_INPUT
+	data : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[MEMCPY(destAddr:=ADR(WriteData), srcAddr:=ADR(data), n:=SIZEOF(UDINT));]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetWriteDataFromUSINT" Id="{0363d49c-bfa6-4174-bc17-ecdf0a64598d}">
+      <Declaration><![CDATA[METHOD PUBLIC SetWriteDataFromUSINT
+VAR_INPUT
+	data : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[MEMCPY(destAddr:=ADR(WriteData), srcAddr:=ADR(data), n:=SIZEOF(USINT));]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_PDxx_RxTxPDOs" Id="{82a39ba6-d3cc-409c-bd6a-6d3004f8cc1a}">
+    <Declaration><![CDATA[TYPE ST_PDxx_RxTxPDOs :
+STRUCT
+	TxPDO_1_6041h_StatusWord AT%I*				: UINT;
+	TxPDO_1_6061h_ModesOfOperationDisplay AT%I*	: SINT;
+	TxPDO_2_6064h_PositionActualValue AT%I*		: DINT;
+	TxPDO_3_6044h_VelocityActualValue AT%I*		: INT;
+	TxPDO_4_60FDh_DigitalInputs AT%I*			: UDINT;
+	
+	RxPDO_1_6040h_ControlWord AT%Q*				: UINT;
+	RxPDO_1_6060h_ModesOfOperation AT%Q*		: SINT;
+	RxPDO_1_3202h_MotorDriveSubmodeSelect AT%Q*	: UDINT;
+	RxPDO_2_607Ah_TargetPosition AT%Q*			: DINT;
+	RxPDO_2_6081h_ProfileVelocity AT%Q*			: UDINT;
+	RxPDO_3_6042h_TargetVelocity AT%Q*			: INT;
+	RxPDO_4_60FEh_DigitalOutputs AT%Q*			: UDINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

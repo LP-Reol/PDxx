@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_PDxx_IO" Id="{968ba91f-9b27-4922-a103-3adf5416c33c}">
+    <Declaration><![CDATA[TYPE ST_PDxx_IO :
+STRUCT
+(* These values can be read with PDO on 60FDh *)
+	InputNegativeLimitSwitch		: BOOL;
+	InputPositiveLimitSwitch		: BOOL;
+	InputHomeSwitch					: BOOL;
+	Input1		: BOOL;
+	Input2		: BOOL;
+	Input3		: BOOL;
+	Input4		: BOOL;
+	Input5		: BOOL;
+	Input6		: BOOL;
+	Input7		: BOOL;
+	Input8		: BOOL;
+
+(* The below values has to be read/set with SDO 3240h *)	
+	InputNegativeLimitSwitchEnabled	: BOOL;
+	InputPositiveLimitSwitchEnabled	: BOOL;
+	InputHomeSwitchEnabled			: BOOL;
+	Input1_Inverted	: BOOL;
+	Input2_Inverted	: BOOL;
+	Input3_Inverted	: BOOL;
+	Input4_Inverted	: BOOL;
+	Input5_Inverted	: BOOL;
+	Input6_Inverted	: BOOL;
+	Input7_Inverted	: BOOL;
+	Input8_Inverted	: BOOL;
+	Input1_24V		: BOOL;
+	Input2_24V		: BOOL;
+	Input3_24V		: BOOL;
+	Input4_24V		: BOOL;
+	Input5_24V		: BOOL;
+	Input6_24V		: BOOL;
+	Input7_24V		: BOOL;
+	Input8_24V		: BOOL;
+
+//	OutputBrake	: BOOL;
+//	Output1		: BOOL;
+//	Output2		: BOOL;
+//	Output3		: BOOL;
+//	Output4		: BOOL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -16,18 +16,77 @@
     <Implicit_KindOfTask>{6fefcae9-59b3-4e22-bfc4-0c0a8e831929}</Implicit_KindOfTask>
     <Implicit_Jitter_Distribution>{26b198da-1bb0-499c-813b-5f7bf4afb7a2}</Implicit_Jitter_Distribution>
     <LibraryReferences>{ab2cf576-b3cd-4536-a446-fb6d3b8d76ca}</LibraryReferences>
+    <Company>iMusic AS</Company>
+    <Released>false</Released>
+    <Title>PDxx</Title>
+    <ProjectVersion>0.0.1.0</ProjectVersion>
+    <LibraryCategories>
+      <LibraryCategory xmlns="">
+        <Id>{1ae6d400-55f5-48a0-9fa9-d6a1ce9670ee}</Id>
+        <Version>0.0.1.0</Version>
+        <DefaultName>iMusic</DefaultName>
+      </LibraryCategory>
+      <LibraryCategory xmlns="">
+        <Id>{6644bf89-c751-404a-8e1d-95824bdbb3a5}</Id>
+        <Version>0.0.1.0</Version>
+        <ParentCategory>
+          <Id>{1ae6d400-55f5-48a0-9fa9-d6a1ce9670ee}</Id>
+        </ParentCategory>
+        <DefaultName>LPReol</DefaultName>
+      </LibraryCategory>
+    </LibraryCategories>
+    <SelectedLibraryCategories>
+      <Id xmlns="">{6644bf89-c751-404a-8e1d-95824bdbb3a5}</Id>
+    </SelectedLibraryCategories>
+    <DefaultNamespace>PDxx</DefaultNamespace>
+    <Author>Jakob Bak</Author>
+    <Description>Library for using the Nanotec PDxx series Stepper Motor with Controller</Description>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="DUTs\E_PDxx_ModesOfOperation.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\E_PDxx_State.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_CANopenDevice.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_PDxx_ControlWord.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_PDxx_IO.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_PDxx_RxTxPDOs.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_PDxx_Status.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_PDxx_StatusWord.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="PlcTask.TcTTO">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\FB_PDxx.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\FB_SDO.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\MAIN.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Version\Global_Version.TcGVL">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DUTs" />
     <Folder Include="GVLs" />
+    <Folder Include="Version" />
     <Folder Include="VISUs" />
     <Folder Include="POUs" />
   </ItemGroup>
@@ -44,6 +103,11 @@
       <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc3_Module</Namespace>
     </PlaceholderReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PDxxPLC.tmc">
+      <SubType>Content</SubType>
+    </None>
   </ItemGroup>
   <ProjectExtensions>
     <PlcProjectOptions>

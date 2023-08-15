@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_PDxx_State" Id="{87a8353d-2725-4311-8c6d-6cb1aaff9dda}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_PDxx_State :
+(
+	UNKNOWN_STATE, 
+	NOT_READY_TO_SWITCH_ON, 
+	SWITCH_ON_DISABLED, 
+	READY_TO_SWITCH_ON, 
+	SWITCHED_ON, 
+	OPERATION_ENABLED, 
+	QUICK_STOP_ACTIVE, 
+	FAULT_REACTION_ACTIVE, 
+	FAULT
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
