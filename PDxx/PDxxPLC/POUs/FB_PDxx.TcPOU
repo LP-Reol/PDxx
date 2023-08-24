@@ -86,6 +86,14 @@ IF bStandAloneTesting = TRUE THEN
 END_IF
 ]]></ST>
     </Implementation>
+    <Action Name="Abort" Id="{e2bb2f0d-5a9a-4330-bbae-9b3699eed6ea}">
+      <Implementation>
+        <ST><![CDATA[
+IF SwitchOffPowerToMotor() = TRUE THEN
+	ResetStatusAndSDOs();
+END_IF]]></ST>
+      </Implementation>
+    </Action>
     <Method Name="ChangeModesOfOperation" Id="{a66c7fe5-131f-486e-b2a0-c20427a2d825}">
       <Declaration><![CDATA[METHOD ChangeModesOfOperation : BOOL
 VAR_INPUT
@@ -560,6 +568,30 @@ END_VAR
 END_IF]]></ST>
       </Implementation>
     </Method>
+    <Action Name="ResetStatusAndSDOs" Id="{6d8f9502-6686-48cc-8558-8b0271768af0}">
+      <Implementation>
+        <ST><![CDATA[
+Status.bZeroInitialised		:= FALSE;
+Status.bReversePolarity		:= FALSE;
+Status.nHomePosition 		:= 0;
+Status.nCurrentPosition		:= 0;
+Status.nCurrentVelocity		:= 0;
+Status.nTargetPosition		:= 0;
+Status.nMinActualPosition	:= 0;
+Status.nMaxActualPosition	:= 0;
+
+fbSdoMaxCurrentValue 			:= 0;
+fbSdoSpecialFunctionEnableValue	:= 0;
+fbSdoFunctionInvertedValue		:= 0;
+fbSdoInputRangeSelectValue		:= 0;
+fbSdoFeedValue					:= 0;
+fbSdoShaftRevolutionsValue		:= 0;
+fbSdoEncoderIncrementsValue		:= 0;
+fbSdoMotorRevolutionsValue		:= 0;
+fbSdoSIUnitPositionValue		:= 0;
+]]></ST>
+      </Implementation>
+    </Action>
     <Method Name="SetFeedRate" Id="{79fcd9ec-e2b4-40e7-ad3c-bab41240745a}">
       <Declaration><![CDATA[METHOD PUBLIC SetFeedRate : BOOL
 VAR_INPUT
