@@ -888,7 +888,8 @@ END_VAR
       <Implementation>
         <ST><![CDATA[CASE eState OF
 	E_PDxx_State.SWITCH_ON_DISABLED,
-	E_PDxx_State.READY_TO_SWITCH_ON,
+	E_PDxx_State.READY_TO_SWITCH_ON:
+		SwitchOnPowerToMotor();
 	E_PDxx_State.SWITCHED_ON:
 		SetVelocity(0);
 		IF eModesOfOperation <> E_PDxx_ModesOfOperation.VELOCITY_MODE THEN
