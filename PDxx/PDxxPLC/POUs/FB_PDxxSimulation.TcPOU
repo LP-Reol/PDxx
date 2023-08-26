@@ -1,0 +1,343 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_PDxxSimulation" Id="{a4499cb8-8c92-424d-9fa9-d12ea02e01ac}" SpecialFunc="None">
+    <Declaration><![CDATA[
+FUNCTION_BLOCK FB_PDxxSimulation
+VAR_INPUT
+	bActivateSimulation		: BOOL := FALSE;
+	nPositionMin			: LREAL := 0; // mm
+	nPositionMax			: LREAL := 1000; // mm
+	nSecondsPerSimStep 		: LREAL := 0.010; // seconds
+	nMMPerSecondPerVelUnit	: LREAL := 0.1667; // mm/s, for example rpm at 10mm per revolution, is 10 mm per minute, and hence this value 10 / 60 = 0.16667.
+	RxPDO_1_6040h_ControlWord  				: UINT;
+	RxPDO_1_6060h_ModesOfOperation  		: SINT;
+	RxPDO_1_3202h_MotorDriveSubmodeSelect  	: UDINT;
+	RxPDO_2_607Ah_TargetPosition  			: DINT;
+	RxPDO_2_6081h_ProfileVelocity			: UDINT;
+	RxPDO_3_6042h_TargetVelocity			: INT;
+	RxPDO_4_60FEh_DigitalOutputs			: UDINT;
+
+END_VAR
+VAR_OUTPUT
+	TxPDO_1_6041h_StatusWord  				: UINT;
+	TxPDO_1_6061h_ModesOfOperationDisplay  	: SINT;
+	TxPDO_2_6064h_PositionActualValue  		: DINT;
+	TxPDO_3_6044h_VelocityActualValue  		: INT;
+	TxPDO_4_60FDh_DigitalInputs  			: UDINT;
+
+END_VAR
+VAR
+	stControlWord		: ST_PDxx_ControlWord;
+	stStatusWord		: ST_PDxx_StatusWord;
+	eTransition			: E_PDxx_TransitionCommand;
+	trExecuteMove		: R_TRIG;
+	bPositionMoveActive	: BOOL;
+	nPosition			: LREAL;
+	eState				: E_PDxx_State				:= E_PDxx_State.SWITCH_ON_DISABLED;
+	eModesOfOperation	: E_PDxx_ModesOfOperation	:= E_PDxx_ModesOfOperation.NO_MODE_CHANGE_OR_NO_MODE_ASSIGNED;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+A_ParseControlWord();
+A_ParseTransition();
+A_Motor();
+A_SetStatusWord();
+]]></ST>
+    </Implementation>
+    <Action Name="A_Motor" Id="{4d1f7ea6-bdce-4b54-a84e-dc840b18b146}">
+      <Implementation>
+        <ST><![CDATA[
+IF eState = E_PDxx_State.OPERATION_ENABLED THEN
+	CASE eModesOfOperation OF
+		E_PDxx_ModesOfOperation.VELOCITY_MODE:
+			VelocityMode();
+		E_PDxx_ModesOfOperation.PROFILE_POSITION_MODE:
+			ProfilePositionMode();
+	END_CASE
+ELSE
+	TxPDO_3_6044h_VelocityActualValue := 0;
+END_IF
+
+TxPDO_2_6064h_PositionActualValue := LREAL_TO_DINT(nPosition);
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="A_ParseControlWord" Id="{229f2ec5-6b2f-408c-ac5a-f4889636f2ac}">
+      <Implementation>
+        <ST><![CDATA[ stControlWord.SwitchedOn_bit_0				:= RxPDO_1_6040h_ControlWord.0;
+ stControlWord.EnableVoltage_bit_1			:= RxPDO_1_6040h_ControlWord.1;
+ stControlWord.QuickStop_bit_2				:= RxPDO_1_6040h_ControlWord.2;
+ stControlWord.EnableOperation_bit_3		:= RxPDO_1_6040h_ControlWord.3;
+ stControlWord.OperationModeSpecific_bit_4	:= RxPDO_1_6040h_ControlWord.4;
+ stControlWord.OperationModeSpecific_bit_5	:= RxPDO_1_6040h_ControlWord.5;
+ stControlWord.OperationModeSpecific_bit_6	:= RxPDO_1_6040h_ControlWord.6;
+ stControlWord.FaultReset_bit_7				:= RxPDO_1_6040h_ControlWord.7;
+ stControlWord.Halt_bit_8					:= RxPDO_1_6040h_ControlWord.8;
+ stControlWord.OperationModeSpecific_bit_9	:= RxPDO_1_6040h_ControlWord.9;]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="A_ParseTransition" Id="{0645cff6-4128-4ef8-9dc4-ced99a62c158}">
+      <Implementation>
+        <ST><![CDATA[IF
+	stControlWord.FaultReset_bit_7 = TRUE AND
+   	eTransition <> E_PDxx_TransitionCommand.FAULT_RESET THEN
+		eTransition := E_PDxx_TransitionCommand.FAULT_RESET;
+ELSIF
+	stControlWord.SwitchedOn_bit_0 = FALSE AND
+	stControlWord.EnableVoltage_bit_1 = TRUE AND
+	stControlWord.QuickStop_bit_2 = TRUE AND
+	stControlWord.FaultReset_bit_7 = FALSE THEN
+		eTransition := E_PDxx_TransitionCommand.SHUTDOWN;
+ELSIF
+	stControlWord.SwitchedOn_bit_0 = TRUE AND
+	stControlWord.EnableVoltage_bit_1 = TRUE AND
+	stControlWord.QuickStop_bit_2 = TRUE AND
+	stControlWord.EnableOperation_bit_3 = FALSE AND
+	stControlWord.FaultReset_bit_7 = FALSE THEN
+		eTransition := E_PDxx_TransitionCommand.SWITCH_ON;
+ELSIF
+	stControlWord.EnableVoltage_bit_1 = FALSE AND
+	stControlWord.FaultReset_bit_7 = FALSE THEN
+		eTransition := E_PDxx_TransitionCommand.DISABLE_VOLTAGE;
+ELSIF
+	stControlWord.EnableVoltage_bit_1 = TRUE AND
+	stControlWord.QuickStop_bit_2 = FALSE AND
+	stControlWord.FaultReset_bit_7 = FALSE THEN
+		eTransition := E_PDxx_TransitionCommand.QUICK_STOP;
+ELSIF
+	stControlWord.SwitchedOn_bit_0 = TRUE AND
+	stControlWord.EnableVoltage_bit_1 = TRUE AND
+	stControlWord.QuickStop_bit_2 = TRUE AND
+	stControlWord.EnableOperation_bit_3 = TRUE AND
+	stControlWord.FaultReset_bit_7 = FALSE THEN
+		eTransition := E_PDxx_TransitionCommand.ENABLE_OPERATION;
+END_IF
+
+CASE eTransition OF
+	E_PDxx_TransitionCommand.FAULT_RESET:
+		IF eState = E_PDxx_State.FAULT THEN
+			eState := E_PDxx_State.SWITCH_ON_DISABLED;
+		END_IF
+	E_PDxx_TransitionCommand.SHUTDOWN:
+		IF eState = E_PDxx_State.SWITCH_ON_DISABLED OR
+		   eState = E_PDxx_State.SWITCHED_ON OR
+		   eState = E_PDxx_State.OPERATION_ENABLED THEN
+			eState := E_PDxx_State.READY_TO_SWITCH_ON;
+		END_IF
+	E_PDxx_TransitionCommand.SWITCH_ON:
+		IF eState = E_PDxx_State.READY_TO_SWITCH_ON OR
+		   eState = E_PDxx_State.OPERATION_ENABLED THEN
+			eState := E_PDxx_State.SWITCHED_ON;
+		END_IF
+	E_PDxx_TransitionCommand.DISABLE_VOLTAGE:
+		IF eState = E_PDxx_State.READY_TO_SWITCH_ON OR
+		   eState = E_PDxx_State.SWITCHED_ON OR
+		   eState = E_PDxx_State.OPERATION_ENABLED OR
+		   eState = E_PDxx_State.QUICK_STOP_ACTIVE THEN
+			eState := E_PDxx_State.SWITCH_ON_DISABLED;
+		END_IF
+	E_PDxx_TransitionCommand.QUICK_STOP:
+		IF eState = E_PDxx_State.OPERATION_ENABLED THEN
+			eState := E_PDxx_State.QUICK_STOP_ACTIVE;
+		END_IF
+	E_PDxx_TransitionCommand.ENABLE_OPERATION:
+		IF eState = E_PDxx_State.SWITCHED_ON THEN
+			eState := E_PDxx_State.OPERATION_ENABLED;
+		END_IF
+END_CASE
+
+IF eState = E_PDxx_State.SWITCH_ON_DISABLED OR
+   eState = E_PDxx_State.READY_TO_SWITCH_ON OR
+   eState = E_PDxx_State.SWITCHED_ON THEN
+   	TxPDO_1_6061h_ModesOfOperationDisplay := RxPDO_1_6060h_ModesOfOperation;
+END_IF
+
+CASE TxPDO_1_6061h_ModesOfOperationDisplay OF
+	-2: eModesOfOperation := E_PDxx_ModesOfOperation.AUTO_SETUP;
+	-1: eModesOfOperation := E_PDxx_ModesOfOperation.CLOCK_DIRECTION_MODE;
+	0: eModesOfOperation := E_PDxx_ModesOfOperation.NO_MODE_CHANGE_OR_NO_MODE_ASSIGNED;
+	1: eModesOfOperation := E_PDxx_ModesOfOperation.PROFILE_POSITION_MODE;
+	2: eModesOfOperation := E_PDxx_ModesOfOperation.VELOCITY_MODE;
+	3: eModesOfOperation := E_PDxx_ModesOfOperation.PROFILE_VELOCITY_MODE;
+	4: eModesOfOperation := E_PDxx_ModesOfOperation.PROFILE_TORQUE_MODE;
+	5: eModesOfOperation := E_PDxx_ModesOfOperation.RESERVED;
+	6: eModesOfOperation := E_PDxx_ModesOfOperation.HOMING_MODE;
+	7: eModesOfOperation := E_PDxx_ModesOfOperation.INTERPOLATED_POSITION_MODE;
+	8: eModesOfOperation := E_PDxx_ModesOfOperation.CYCLIC_SYNCHRONOUS_POSITION_MODE;
+	9: eModesOfOperation := E_PDxx_ModesOfOperation.CYCLIC_SYNCHRONOUS_VELOCITY_MODE;
+	10: eModesOfOperation := E_PDxx_ModesOfOperation.CYCLIC_SYNCHRONOUS_TORQUE_MODE;	
+END_CASE]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="A_SetStatusWord" Id="{86854303-5eba-44b9-84b6-5cf55c4c8c77}">
+      <Implementation>
+        <ST><![CDATA[CASE eState OF
+	E_PDxx_State.NOT_READY_TO_SWITCH_ON:
+		stStatusWord.ReadyToSwitchOn	:= FALSE;
+		stStatusWord.SwitchedOn			:= FALSE;
+		stStatusWord.OperationEnabled	:= FALSE;
+		stStatusWord.Fault				:= FALSE;
+//		stStatusWord.VoltageEnabled		:= FALSE;
+//		stStatusWord.QuickStop			:= FALSE;
+		stStatusWord.SwitchOnDisabled	:= FALSE;
+	E_PDxx_State.SWITCH_ON_DISABLED:
+		stStatusWord.ReadyToSwitchOn	:= FALSE;
+		stStatusWord.SwitchedOn			:= FALSE;
+		stStatusWord.OperationEnabled	:= FALSE;
+		stStatusWord.Fault				:= FALSE;
+//		stStatusWord.VoltageEnabled		:= FALSE;
+//		stStatusWord.QuickStop			:= FALSE;
+		stStatusWord.SwitchOnDisabled	:= TRUE;
+	E_PDxx_State.READY_TO_SWITCH_ON:
+		stStatusWord.ReadyToSwitchOn	:= TRUE;
+		stStatusWord.SwitchedOn			:= FALSE;
+		stStatusWord.OperationEnabled	:= FALSE;
+		stStatusWord.Fault				:= FALSE;
+//		stStatusWord.VoltageEnabled		:= FALSE;
+		stStatusWord.QuickStop			:= TRUE;
+		stStatusWord.SwitchOnDisabled	:= FALSE;
+	E_PDxx_State.SWITCHED_ON:
+		stStatusWord.ReadyToSwitchOn	:= TRUE;
+		stStatusWord.SwitchedOn			:= TRUE;
+		stStatusWord.OperationEnabled	:= FALSE;
+		stStatusWord.Fault				:= FALSE;
+//		stStatusWord.VoltageEnabled		:= FALSE;
+		stStatusWord.QuickStop			:= TRUE;
+		stStatusWord.SwitchOnDisabled	:= FALSE;
+	E_PDxx_State.OPERATION_ENABLED:
+		stStatusWord.ReadyToSwitchOn	:= TRUE;
+		stStatusWord.SwitchedOn			:= TRUE;
+		stStatusWord.OperationEnabled	:= TRUE;
+		stStatusWord.Fault				:= FALSE;
+//		stStatusWord.VoltageEnabled		:= FALSE;
+		stStatusWord.QuickStop			:= TRUE;
+		stStatusWord.SwitchOnDisabled	:= FALSE;
+	E_PDxx_State.QUICK_STOP_ACTIVE:
+		stStatusWord.ReadyToSwitchOn	:= TRUE;
+		stStatusWord.SwitchedOn			:= TRUE;
+		stStatusWord.OperationEnabled	:= TRUE;
+		stStatusWord.Fault				:= FALSE;
+//		stStatusWord.VoltageEnabled		:= FALSE;
+		stStatusWord.QuickStop			:= FALSE;
+		stStatusWord.SwitchOnDisabled	:= FALSE;
+	E_PDxx_State.FAULT_REACTION_ACTIVE:
+		stStatusWord.ReadyToSwitchOn	:= TRUE;
+		stStatusWord.SwitchedOn			:= TRUE;
+		stStatusWord.OperationEnabled	:= TRUE;
+		stStatusWord.Fault				:= TRUE;
+//		stStatusWord.VoltageEnabled		:= FALSE;
+//		stStatusWord.QuickStop			:= FALSE;
+		stStatusWord.SwitchOnDisabled	:= FALSE;
+	E_PDxx_State.FAULT:
+		stStatusWord.ReadyToSwitchOn	:= FALSE;
+		stStatusWord.SwitchedOn			:= FALSE;
+		stStatusWord.OperationEnabled	:= FALSE;
+		stStatusWord.Fault				:= TRUE;
+//		stStatusWord.VoltageEnabled		:= FALSE;
+//		stStatusWord.QuickStop			:= FALSE;
+		stStatusWord.SwitchOnDisabled	:= FALSE;
+END_CASE
+
+// Set more statusword bits if necessary for simulation, for example target reached and closed loop???
+
+TxPDO_1_6041h_StatusWord.0 := stStatusWord.ReadyToSwitchOn;
+TxPDO_1_6041h_StatusWord.1 := stStatusWord.SwitchedOn;
+TxPDO_1_6041h_StatusWord.2 := stStatusWord.OperationEnabled;
+TxPDO_1_6041h_StatusWord.3 := stStatusWord.Fault;
+TxPDO_1_6041h_StatusWord.4 := stStatusWord.VoltageEnabled;
+TxPDO_1_6041h_StatusWord.5 := stStatusWord.QuickStop;
+TxPDO_1_6041h_StatusWord.6 := stStatusWord.SwitchOnDisabled;
+TxPDO_1_6041h_StatusWord.7 := stStatusWord.Warning;
+TxPDO_1_6041h_StatusWord.8 := stStatusWord.Synchronization;
+TxPDO_1_6041h_StatusWord.9 := stStatusWord.Remote;
+TxPDO_1_6041h_StatusWord.10 := stStatusWord.TargetReached;
+TxPDO_1_6041h_StatusWord.11 := stStatusWord.InternalLimitReached;
+TxPDO_1_6041h_StatusWord.12 := stStatusWord.OperationModeSpecific_bit12;
+TxPDO_1_6041h_StatusWord.13 := stStatusWord.OperationModeSpecific_bit13;
+TxPDO_1_6041h_StatusWord.15 := stStatusWord.ClosedLoopAvailable;]]></ST>
+      </Implementation>
+    </Action>
+    <Method Name="ProfilePositionMode" Id="{a50ad241-0646-49e3-ace3-5d2da85d4833}">
+      <Declaration><![CDATA[METHOD PRIVATE ProfilePositionMode
+VAR
+	nDeltaPosition : LREAL;
+	nTargetPosition : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[trExecuteMove.CLK := stControlWord.OperationModeSpecific_bit_4;
+IF trExecuteMove.Q = TRUE THEN
+	bPositionMoveActive := TRUE;
+	stStatusWord.OperationModeSpecific_bit12 := TRUE;
+END_IF
+
+IF bPositionMoveActive = TRUE THEN
+	IF RxPDO_2_6081h_ProfileVelocity < 0 THEN
+		TxPDO_3_6044h_VelocityActualValue  := -UDINT_TO_INT(RxPDO_2_6081h_ProfileVelocity);
+	ELSE
+		TxPDO_3_6044h_VelocityActualValue  :=  UDINT_TO_INT(RxPDO_2_6081h_ProfileVelocity);
+	END_IF
+	
+	nTargetPosition := DINT_TO_LREAL(RxPDO_2_607Ah_TargetPosition);
+	nDeltaPosition := nPosition + INT_TO_LREAL(TxPDO_3_6044h_VelocityActualValue) * nMMPerSecondPerVelUnit * nSecondsPerSimStep;
+
+	IF nPosition < nTargetPosition AND
+	   nPosition + nDeltaPosition >=  nTargetPosition THEN
+		nPosition := nTargetPosition;
+		stStatusWord.TargetReached := TRUE;
+		bPositionMoveActive := FALSE;
+		RETURN;
+	END_IF
+	
+	IF nPosition > nTargetPosition AND
+	   nPosition + nDeltaPosition <=  nTargetPosition THEN
+		nPosition := nTargetPosition;
+		stStatusWord.TargetReached := TRUE;
+		bPositionMoveActive := FALSE;
+		RETURN;
+	END_IF
+	
+	nPosition := nPosition + nDeltaPosition; 
+	
+	IF nPosition < nPositionMin THEN
+		nPosition := nPositionMin;
+		TxPDO_3_6044h_VelocityActualValue := 0;
+	END_IF
+	
+	IF nPosition > nPositionMax THEN
+		nPosition := nPositionMax;
+		TxPDO_3_6044h_VelocityActualValue := 0;
+	END_IF
+
+END_IF
+
+IF stControlWord.OperationModeSpecific_bit_4 = FALSE THEN
+	stStatusWord.OperationModeSpecific_bit12 := FALSE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="VelocityMode" Id="{9037df63-8ba2-4360-b635-c99c1b1ed146}">
+      <Declaration><![CDATA[
+METHOD PRIVATE VelocityMode
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TxPDO_3_6044h_VelocityActualValue  :=  RxPDO_3_6042h_TargetVelocity;
+
+nPosition := nPosition + DINT_TO_LREAL(TxPDO_3_6044h_VelocityActualValue) * nMMPerSecondPerVelUnit * nSecondsPerSimStep; 
+
+IF nPosition < nPositionMin THEN
+	nPosition := nPositionMin;
+	TxPDO_3_6044h_VelocityActualValue := 0;
+END_IF
+
+IF nPosition > nPositionMax THEN
+	nPosition := nPositionMax;
+	TxPDO_3_6044h_VelocityActualValue := 0;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

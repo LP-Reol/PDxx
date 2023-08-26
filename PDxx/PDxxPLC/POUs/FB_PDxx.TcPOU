@@ -4,8 +4,10 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_PDxx
 
 VAR_INPUT
-	eState : E_PDxx_State;
-	eModesOfOperation : E_PDxx_ModesOfOperation;
+	Simulate			: FB_PDxxSimulation;
+	
+	eState				: E_PDxx_State;
+	eModesOfOperation	: E_PDxx_ModesOfOperation;
 
 	bStandAloneTesting 				: BOOL 		:= FALSE;
 	eStandAloneTestState			: E_PDxx_State;
@@ -68,6 +70,22 @@ END_VAR
 CheckModesOfOperation();
 CheckDigitalInputs();
 ResetControlWordBit4();
+IF Simulate.bActivateSimulation = TRUE THEN
+	Simulate(
+		RxPDO_1_6040h_ControlWord  				:= stPDOs.RxPDO_1_6040h_ControlWord,
+		RxPDO_1_6060h_ModesOfOperation  		:= stPDOs.RxPDO_1_6060h_ModesOfOperation,
+		RxPDO_1_3202h_MotorDriveSubmodeSelect  	:= stPDOs.RxPDO_1_3202h_MotorDriveSubmodeSelect,
+		RxPDO_2_607Ah_TargetPosition  			:= stPDOs.RxPDO_2_607Ah_TargetPosition,
+		RxPDO_2_6081h_ProfileVelocity			:= stPDOs.RxPDO_2_6081h_ProfileVelocity,
+		RxPDO_3_6042h_TargetVelocity			:= stPDOs.RxPDO_3_6042h_TargetVelocity,
+		RxPDO_4_60FEh_DigitalOutputs			:= stPDOs.RxPDO_4_60FEh_DigitalOutputs);
+		
+	stPDOs.TxPDO_1_6041h_StatusWord 				:= Simulate.TxPDO_1_6041h_StatusWord;
+	stPDOs.TxPDO_1_6061h_ModesOfOperationDisplay	:= Simulate.TxPDO_1_6061h_ModesOfOperationDisplay;
+	stPDOs.TxPDO_2_6064h_PositionActualValue		:= Simulate.TxPDO_2_6064h_PositionActualValue;
+	stPDOs.TxPDO_3_6044h_VelocityActualValue		:= Simulate.TxPDO_3_6044h_VelocityActualValue;
+	stPDOs.TxPDO_4_60FDh_DigitalInputs				:= Simulate.TxPDO_4_60FDh_DigitalInputs;
+END_IF
 
 
 IF bStandAloneTesting = TRUE THEN
