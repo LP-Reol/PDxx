@@ -276,7 +276,7 @@ IF bPositionMoveActive = TRUE THEN
 	END_IF
 	
 	nTargetPosition := DINT_TO_LREAL(RxPDO_2_607Ah_TargetPosition);
-	nDeltaPosition := nPosition + INT_TO_LREAL(TxPDO_3_6044h_VelocityActualValue) * Parameters.nMMPerSecondPerVelUnit * Parameters.nSecondsPerSimStep;
+	nDeltaPosition := INT_TO_LREAL(TxPDO_3_6044h_VelocityActualValue) * Parameters.nMMPerSecondPerVelUnit * Parameters.nSecondsPerSimStep;
 
 	IF nPosition < nTargetPosition AND
 	   nPosition + nDeltaPosition >=  nTargetPosition THEN
