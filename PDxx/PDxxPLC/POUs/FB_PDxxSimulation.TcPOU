@@ -269,13 +269,14 @@ IF trExecuteMove.Q = TRUE THEN
 END_IF
 
 IF bPositionMoveActive = TRUE THEN
-	IF RxPDO_2_6081h_ProfileVelocity < 0 THEN
+	nTargetPosition := DINT_TO_LREAL(RxPDO_2_607Ah_TargetPosition);
+
+	IF nTargetPosition < nPosition THEN
 		TxPDO_3_6044h_VelocityActualValue  := -UDINT_TO_INT(RxPDO_2_6081h_ProfileVelocity);
 	ELSE
 		TxPDO_3_6044h_VelocityActualValue  :=  UDINT_TO_INT(RxPDO_2_6081h_ProfileVelocity);
 	END_IF
 	
-	nTargetPosition := DINT_TO_LREAL(RxPDO_2_607Ah_TargetPosition);
 	nDeltaPosition := INT_TO_LREAL(TxPDO_3_6044h_VelocityActualValue) * Parameters.nMMPerSecondPerVelUnit * Parameters.nSecondsPerSimStep;
 
 	IF nPosition < nTargetPosition AND
