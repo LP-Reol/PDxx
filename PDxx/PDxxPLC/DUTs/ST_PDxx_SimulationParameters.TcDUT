@@ -10,7 +10,7 @@ STRUCT
 	nMMPerSecondPerVelUnit	: LREAL := 0.1667; // mm/s, for example rpm at 10mm per revolution, is 10 mm per minute, and hence this value 10 / 60 = 0.16667.
 	
 	bObjectInserted			: BOOL;
-	nObjectThickness		: LREAL := 4.0; // mm
+	nObjectThickness		: LREAL := 0.0; // mm
 END_STRUCT
 END_TYPE
 ]]></Declaration>
