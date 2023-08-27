@@ -262,7 +262,7 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[trExecuteMove.CLK := stControlWord.OperationModeSpecific_bit_4;
+        <ST><![CDATA[trExecuteMove(CLK := stControlWord.OperationModeSpecific_bit_4);
 IF trExecuteMove.Q = TRUE THEN
 	bPositionMoveActive := TRUE;
 	stStatusWord.OperationModeSpecific_bit12 := TRUE;
