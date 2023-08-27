@@ -66,10 +66,7 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[CheckState();
-CheckModesOfOperation();
-CheckDigitalInputs();
-ResetControlWordBit4();
+      <ST><![CDATA[
 IF Simulate.bActivateSimulation = TRUE THEN
 	Simulate(
 		RxPDO_1_6040h_ControlWord  				:= stPDOs.RxPDO_1_6040h_ControlWord,
@@ -87,6 +84,10 @@ IF Simulate.bActivateSimulation = TRUE THEN
 	stPDOs.TxPDO_4_60FDh_DigitalInputs				:= Simulate.TxPDO_4_60FDh_DigitalInputs;
 END_IF
 
+CheckState();
+CheckModesOfOperation();
+CheckDigitalInputs();
+ResetControlWordBit4();
 
 IF bStandAloneTesting = TRUE THEN
 	IF eModesOfOperation <> eStandAloneTestModesOfOperation THEN
