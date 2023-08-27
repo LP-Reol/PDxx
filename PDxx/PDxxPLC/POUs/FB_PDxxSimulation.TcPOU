@@ -4,11 +4,7 @@
     <Declaration><![CDATA[
 FUNCTION_BLOCK FB_PDxxSimulation
 VAR_INPUT
-	bActivateSimulation		: BOOL := FALSE;
-	nPositionMin			: LREAL := 0; // mm
-	nPositionMax			: LREAL := 1000; // mm
-	nSecondsPerSimStep 		: LREAL := 0.010; // seconds
-	nMMPerSecondPerVelUnit	: LREAL := 0.1667; // mm/s, for example rpm at 10mm per revolution, is 10 mm per minute, and hence this value 10 / 60 = 0.16667.
+	Parameters								: ST_PDxx_SimulationParameters;
 	RxPDO_1_6040h_ControlWord  				: UINT;
 	RxPDO_1_6060h_ModesOfOperation  		: SINT;
 	RxPDO_1_3202h_MotorDriveSubmodeSelect  	: UDINT;
@@ -280,7 +276,7 @@ IF bPositionMoveActive = TRUE THEN
 	END_IF
 	
 	nTargetPosition := DINT_TO_LREAL(RxPDO_2_607Ah_TargetPosition);
-	nDeltaPosition := nPosition + INT_TO_LREAL(TxPDO_3_6044h_VelocityActualValue) * nMMPerSecondPerVelUnit * nSecondsPerSimStep;
+	nDeltaPosition := nPosition + INT_TO_LREAL(TxPDO_3_6044h_VelocityActualValue) * Parameters.nMMPerSecondPerVelUnit * Parameters.nSecondsPerSimStep;
 
 	IF nPosition < nTargetPosition AND
 	   nPosition + nDeltaPosition >=  nTargetPosition THEN
@@ -300,13 +296,13 @@ IF bPositionMoveActive = TRUE THEN
 	
 	nPosition := nPosition + nDeltaPosition; 
 	
-	IF nPosition < nPositionMin THEN
-		nPosition := nPositionMin;
+	IF nPosition < Parameters.nPositionMin THEN
+		nPosition := Parameters.nPositionMin;
 		TxPDO_3_6044h_VelocityActualValue := 0;
 	END_IF
 	
-	IF nPosition > nPositionMax THEN
-		nPosition := nPositionMax;
+	IF nPosition > Parameters.nPositionMax THEN
+		nPosition := Parameters.nPositionMax;
 		TxPDO_3_6044h_VelocityActualValue := 0;
 	END_IF
 
@@ -325,15 +321,15 @@ METHOD PRIVATE VelocityMode
         <ST><![CDATA[
 TxPDO_3_6044h_VelocityActualValue  :=  RxPDO_3_6042h_TargetVelocity;
 
-nPosition := nPosition + DINT_TO_LREAL(TxPDO_3_6044h_VelocityActualValue) * nMMPerSecondPerVelUnit * nSecondsPerSimStep; 
+nPosition := nPosition + DINT_TO_LREAL(TxPDO_3_6044h_VelocityActualValue) * Parameters.nMMPerSecondPerVelUnit * Parameters.nSecondsPerSimStep; 
 
-IF nPosition < nPositionMin THEN
-	nPosition := nPositionMin;
+IF nPosition < Parameters.nPositionMin THEN
+	nPosition := Parameters.nPositionMin;
 	TxPDO_3_6044h_VelocityActualValue := 0;
 END_IF
 
-IF nPosition > nPositionMax THEN
-	nPosition := nPositionMax;
+IF nPosition > Parameters.nPositionMax THEN
+	nPosition := Parameters.nPositionMax;
 	TxPDO_3_6044h_VelocityActualValue := 0;
 END_IF
 ]]></ST>

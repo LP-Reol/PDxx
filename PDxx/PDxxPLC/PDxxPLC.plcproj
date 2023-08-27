@@ -64,6 +64,9 @@
     <Compile Include="DUTs\ST_PDxx_RxTxPDOs.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DUTs\ST_PDxx_SimulationParameters.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\ST_PDxx_Status.TcDUT">
       <SubType>Code</SubType>
     </Compile>

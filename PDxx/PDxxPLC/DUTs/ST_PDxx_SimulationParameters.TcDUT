@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_PDxx_SimulationParameters" Id="{4c793fbc-2191-4dac-8244-23190ab48e4e}">
+    <Declaration><![CDATA[TYPE ST_PDxx_SimulationParameters :
+STRUCT
+	bActivateSimulation		: BOOL := FALSE;
+	nPositionMin			: LREAL := 0; // mm
+	nPositionMax			: LREAL := 1000; // mm
+	nSecondsPerSimStep 		: LREAL := 0.010; // seconds
+	nMMPerSecondPerVelUnit	: LREAL := 0.1667; // mm/s, for example rpm at 10mm per revolution, is 10 mm per minute, and hence this value 10 / 60 = 0.16667.
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

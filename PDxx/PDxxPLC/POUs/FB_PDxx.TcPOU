@@ -4,8 +4,8 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_PDxx
 
 VAR_INPUT
-	Simulate			: FB_PDxxSimulation;
-	
+	SimParameters		: ST_PDxx_SimulationParameters;
+
 	eState				: E_PDxx_State;
 	eModesOfOperation	: E_PDxx_ModesOfOperation;
 
@@ -62,13 +62,16 @@ VAR
 	
 	stStatusWord : ST_PDxx_StatusWord;
 	stControlWord : ST_PDxx_ControlWord;
+
+	Simulate			: FB_PDxxSimulation;
 	
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-IF Simulate.bActivateSimulation = TRUE THEN
+IF SimParameters.bActivateSimulation = TRUE THEN
 	Simulate(
+		Parameters								:= SimParameters,
 		RxPDO_1_6040h_ControlWord  				:= stPDOs.RxPDO_1_6040h_ControlWord,
 		RxPDO_1_6060h_ModesOfOperation  		:= stPDOs.RxPDO_1_6060h_ModesOfOperation,
 		RxPDO_1_3202h_MotorDriveSubmodeSelect  	:= stPDOs.RxPDO_1_3202h_MotorDriveSubmodeSelect,
