@@ -727,8 +727,16 @@ END_VAR
       <Implementation>
         <ST><![CDATA[fbSdoMaxCurrent.SetWriteDataFromUDINT(nMaxCurrent);
 fbSdoMaxCurrent(bStartReading := TRUE, bStartWriting := TRUE);
-IF fbSdoMaxCurrent.ReadDataAvailable THEN
-	fbSdoMaxCurrentValue := fbSdoMaxCurrent.GetReadDataAsUDINT();
+
+IF SimParameters.bActivateSimulation = TRUE THEN
+	fbSdoMaxCurrentValue := nMaxCurrent;
+ELSE
+	IF fbSdoMaxCurrent.ReadDataAvailable THEN
+		fbSdoMaxCurrentValue := fbSdoMaxCurrent.GetReadDataAsUDINT();
+	END_IF
+END_IF
+		
+IF fbSdoMaxCurrentValue = nMaxCurrent THEN
 	SetMaxCurrent := TRUE;
 ELSE
 	SetMaxCurrent := FALSE;
