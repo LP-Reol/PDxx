@@ -319,6 +319,9 @@ END_IF]]></ST>
     <Method Name="VelocityMode" Id="{9037df63-8ba2-4360-b635-c99c1b1ed146}">
       <Declaration><![CDATA[
 METHOD PRIVATE VelocityMode
+VAR
+	nInsertedObjectThickness : LREAL;
+END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
@@ -326,8 +329,12 @@ TxPDO_3_6044h_VelocityActualValue  :=  RxPDO_3_6042h_TargetVelocity;
 
 nPosition := nPosition + DINT_TO_LREAL(TxPDO_3_6044h_VelocityActualValue) * Parameters.nMMPerSecondPerVelUnit * Parameters.nSecondsPerSimStep; 
 
-IF nPosition < Parameters.nPositionMin THEN
-	nPosition := Parameters.nPositionMin;
+IF Parameters.bObjectInserted = TRUE THEN
+	nInsertedObjectThickness := Parameters.nObjectThickness;
+END_IF
+
+IF nPosition < Parameters.nPositionMin + nInsertedObjectThickness THEN
+	nPosition := Parameters.nPositionMin + nInsertedObjectThickness;
 	TxPDO_3_6044h_VelocityActualValue := 0;
 END_IF
 
