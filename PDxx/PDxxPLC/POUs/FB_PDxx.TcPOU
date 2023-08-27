@@ -69,6 +69,11 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
+CheckState();
+CheckModesOfOperation();
+CheckDigitalInputs();
+ResetControlWordBit4();
+
 IF SimParameters.bActivateSimulation = TRUE THEN
 	Simulate(
 		Parameters								:= SimParameters,
@@ -86,11 +91,6 @@ IF SimParameters.bActivateSimulation = TRUE THEN
 	stPDOs.TxPDO_3_6044h_VelocityActualValue		:= Simulate.TxPDO_3_6044h_VelocityActualValue;
 	stPDOs.TxPDO_4_60FDh_DigitalInputs				:= Simulate.TxPDO_4_60FDh_DigitalInputs;
 END_IF
-
-CheckState();
-CheckModesOfOperation();
-CheckDigitalInputs();
-ResetControlWordBit4();
 
 IF bStandAloneTesting = TRUE THEN
 	IF eModesOfOperation <> eStandAloneTestModesOfOperation THEN
