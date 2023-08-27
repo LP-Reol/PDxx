@@ -447,9 +447,11 @@ END_IF
       <Declaration><![CDATA[METHOD PUBLIC GetVelocity : INT]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF Status.bReversePolarity = TRUE THEN
-	 GetVelocity := -stPDOs.RxPDO_3_6042h_TargetVelocity;
+//	 GetVelocity := -stPDOs.RxPDO_3_6042h_TargetVelocity;
+	 GetVelocity := -stPDOs.TxPDO_3_6044h_VelocityActualValue;
 ELSE
-	GetVelocity := stPDOs.RxPDO_3_6042h_TargetVelocity;	
+//	GetVelocity := stPDOs.RxPDO_3_6042h_TargetVelocity;	
+	GetVelocity := stPDOs.TxPDO_3_6044h_VelocityActualValue;	
 END_IF]]></ST>
       </Implementation>
     </Method>

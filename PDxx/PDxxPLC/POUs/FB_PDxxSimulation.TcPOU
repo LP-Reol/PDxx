@@ -282,6 +282,7 @@ IF bPositionMoveActive = TRUE THEN
 	IF nPosition < nTargetPosition AND
 	   nPosition + nDeltaPosition >=  nTargetPosition THEN
 		nPosition := nTargetPosition;
+		TxPDO_3_6044h_VelocityActualValue := 0;
 		stStatusWord.TargetReached := TRUE;
 		bPositionMoveActive := FALSE;
 		RETURN;
@@ -290,6 +291,7 @@ IF bPositionMoveActive = TRUE THEN
 	IF nPosition > nTargetPosition AND
 	   nPosition + nDeltaPosition <=  nTargetPosition THEN
 		nPosition := nTargetPosition;
+		TxPDO_3_6044h_VelocityActualValue := 0;
 		stStatusWord.TargetReached := TRUE;
 		bPositionMoveActive := FALSE;
 		RETURN;
