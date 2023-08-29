@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_PDxx_TransitionCommand" Id="{ceb7524f-0cfd-41be-ae22-a639969a49f1}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_PDxx_TransitionCommand :
+(
+	SHUTDOWN := 0,
+	SWITCH_ON,
+	DISABLE_VOLTAGE,
+	QUICK_STOP,
+	ENABLE_OPERATION,
+	FAULT_RESET
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

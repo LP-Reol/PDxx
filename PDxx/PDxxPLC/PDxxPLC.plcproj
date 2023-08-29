@@ -19,7 +19,7 @@
     <Company>iMusic AS</Company>
     <Released>true</Released>
     <Title>PDxx</Title>
-    <ProjectVersion>0.0.1.2</ProjectVersion>
+    <ProjectVersion>0.0.1.3</ProjectVersion>
     <LibraryCategories>
       <LibraryCategory xmlns="">
         <Id>{1ae6d400-55f5-48a0-9fa9-d6a1ce9670ee}</Id>
@@ -49,6 +49,9 @@
     <Compile Include="DUTs\E_PDxx_State.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DUTs\E_PDxx_TransitionCommand.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\ST_CANopenDevice.TcDUT">
       <SubType>Code</SubType>
     </Compile>
@@ -61,6 +64,9 @@
     <Compile Include="DUTs\ST_PDxx_RxTxPDOs.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DUTs\ST_PDxx_SimulationParameters.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\ST_PDxx_Status.TcDUT">
       <SubType>Code</SubType>
     </Compile>
@@ -68,6 +74,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="PlcTask.TcTTO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\FB_PDxxSimulation.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\FB_PDxx.TcPOU">

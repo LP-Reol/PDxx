@@ -4,8 +4,10 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_PDxx
 
 VAR_INPUT
-	eState : E_PDxx_State;
-	eModesOfOperation : E_PDxx_ModesOfOperation;
+	SimParameters		: ST_PDxx_SimulationParameters;
+
+	eState				: E_PDxx_State;
+	eModesOfOperation	: E_PDxx_ModesOfOperation;
 
 	bStandAloneTesting 				: BOOL 		:= FALSE;
 	eStandAloneTestState			: E_PDxx_State;
@@ -60,15 +62,35 @@ VAR
 	
 	stStatusWord : ST_PDxx_StatusWord;
 	stControlWord : ST_PDxx_ControlWord;
+
+	Simulate			: FB_PDxxSimulation;
 	
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[CheckState();
+      <ST><![CDATA[
+CheckState();
 CheckModesOfOperation();
 CheckDigitalInputs();
 ResetControlWordBit4();
 
+IF SimParameters.bActivateSimulation = TRUE THEN
+	Simulate(
+		Parameters								:= SimParameters,
+		RxPDO_1_6040h_ControlWord  				:= stPDOs.RxPDO_1_6040h_ControlWord,
+		RxPDO_1_6060h_ModesOfOperation  		:= stPDOs.RxPDO_1_6060h_ModesOfOperation,
+		RxPDO_1_3202h_MotorDriveSubmodeSelect  	:= stPDOs.RxPDO_1_3202h_MotorDriveSubmodeSelect,
+		RxPDO_2_607Ah_TargetPosition  			:= stPDOs.RxPDO_2_607Ah_TargetPosition,
+		RxPDO_2_6081h_ProfileVelocity			:= stPDOs.RxPDO_2_6081h_ProfileVelocity,
+		RxPDO_3_6042h_TargetVelocity			:= stPDOs.RxPDO_3_6042h_TargetVelocity,
+		RxPDO_4_60FEh_DigitalOutputs			:= stPDOs.RxPDO_4_60FEh_DigitalOutputs);
+		
+	stPDOs.TxPDO_1_6041h_StatusWord 				:= Simulate.TxPDO_1_6041h_StatusWord;
+	stPDOs.TxPDO_1_6061h_ModesOfOperationDisplay	:= Simulate.TxPDO_1_6061h_ModesOfOperationDisplay;
+	stPDOs.TxPDO_2_6064h_PositionActualValue		:= Simulate.TxPDO_2_6064h_PositionActualValue;
+	stPDOs.TxPDO_3_6044h_VelocityActualValue		:= Simulate.TxPDO_3_6044h_VelocityActualValue;
+	stPDOs.TxPDO_4_60FDh_DigitalInputs				:= Simulate.TxPDO_4_60FDh_DigitalInputs;
+END_IF
 
 IF bStandAloneTesting = TRUE THEN
 	IF eModesOfOperation <> eStandAloneTestModesOfOperation THEN
@@ -425,9 +447,11 @@ END_IF
       <Declaration><![CDATA[METHOD PUBLIC GetVelocity : INT]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF Status.bReversePolarity = TRUE THEN
-	 GetVelocity := -stPDOs.RxPDO_3_6042h_TargetVelocity;
+//	 GetVelocity := -stPDOs.RxPDO_3_6042h_TargetVelocity;
+	 GetVelocity := -stPDOs.TxPDO_3_6044h_VelocityActualValue;
 ELSE
-	GetVelocity := stPDOs.RxPDO_3_6042h_TargetVelocity;	
+//	GetVelocity := stPDOs.RxPDO_3_6042h_TargetVelocity;	
+	GetVelocity := stPDOs.TxPDO_3_6044h_VelocityActualValue;	
 END_IF]]></ST>
       </Implementation>
     </Method>
@@ -705,8 +729,16 @@ END_VAR
       <Implementation>
         <ST><![CDATA[fbSdoMaxCurrent.SetWriteDataFromUDINT(nMaxCurrent);
 fbSdoMaxCurrent(bStartReading := TRUE, bStartWriting := TRUE);
-IF fbSdoMaxCurrent.ReadDataAvailable THEN
-	fbSdoMaxCurrentValue := fbSdoMaxCurrent.GetReadDataAsUDINT();
+
+IF SimParameters.bActivateSimulation = TRUE THEN
+	fbSdoMaxCurrentValue := nMaxCurrent;
+ELSE
+	IF fbSdoMaxCurrent.ReadDataAvailable THEN
+		fbSdoMaxCurrentValue := fbSdoMaxCurrent.GetReadDataAsUDINT();
+	END_IF
+END_IF
+		
+IF fbSdoMaxCurrentValue = nMaxCurrent THEN
 	SetMaxCurrent := TRUE;
 ELSE
 	SetMaxCurrent := FALSE;
