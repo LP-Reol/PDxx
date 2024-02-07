@@ -45,7 +45,7 @@ Slave-Mode:
 		<Vars VarGrpType="2">
 			<Name>Outputs</Name>
 		</Vars>
-		<CanOpen NodeId="1" BaudSupport="511" FixedSdos="16" GenerateFixedSdos="true" DvFlag_Active="true" AddTypeInfo="4" DevProfNum="402" CobIDEmcy="129" CobIDGuard="1793" GuardTime="100" LifeTime="3" VendorId="620" ProductCode="48" SdoTimeout="0">
+		<CanOpen NodeId="1" BaudSupport="511" FixedSdos="16" GenerateFixedSdos="true" DvFlag_Active="true" AddTypeInfo="4" DevProfNum="402" CobIDEmcy="129" CobIDGuard="1793" GuardTime="100" LifeTime="3" VendorId="620" ProductCode="48">
 			<Sdo Index="6144" SubIndex="1" Length="4" Value="385"/>
 			<Sdo Index="6144" SubIndex="2" Length="1" Value="255"/>
 			<Sdo Index="6145" SubIndex="1" Length="4" Value="641"/>
