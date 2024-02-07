@@ -13,7 +13,6 @@ VAR_INPUT
 	eStandAloneTestState			: E_PDxx_State;
 	eStandAloneTestModesOfOperation	: E_PDxx_ModesOfOperation;
 	bStandAloneTestSendTarget		: BOOL 		:= 0;
-	bStandAloneTestSendTargetSuccess: BOOL;
 	
 	stCANopenDevice : ST_CANopenDevice;
 
@@ -50,6 +49,7 @@ END_VAR
 
 VAR_OUTPUT
 	Status						: ST_PDxx_Status;
+	bStandAloneTestSendTargetSuccess: BOOL;
 END_VAR
 
 VAR
