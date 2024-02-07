@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<TcSmItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4024.53" ClassName="CDevEL6751Def" SubType="87">
+	<Device Id="1" DevType="87" AmsPort="28673" AmsNetId="10.3.0.21.2.1" RemoteName="Device 1 (EL6751)">
+		<Name>__FILENAME__</Name>
+		<AddressInfo>
+			<Ecat>
+				<EtherCATDeviceId>2</EtherCATDeviceId>
+				<EtherCATDeviceName>TIID^Device 2 (EtherCAT)^Term 1 (EK1100)^Term 2 (EL6751)</EtherCATDeviceName>
+			</Ecat>
+		</AddressInfo>
+		<Image Id="3" AddrType="4" ImageType="3">
+			<Name>Image</Name>
+		</Image>
+		<Box File="Box 1 (PD2-C411L18-E-65-08).xti" Id="4"/>
+		<Box File="Box 2 (PD4-E601L42-E-65-2).xti" Id="5"/>
+		<CanOpen>
+			<Fcxxxx>
+				<DevSettings BusyIntEnabled="true" DisableSlots="true" NetId="0a0300150201" FifoSize="10" CycleDivider="1"/>
+				<DevParameter CycleTime="40000" WatchDog="100" InputShift="60"/>
+				<EquiParameter RelationShiftCycle="0"/>
+			</Fcxxxx>
+			<BusParameter NodeId="127" CobIdSync="128" TxPdoWindowSize="30" CycleDivider="1" MaxLoPrioQueue="100"/>
+		</CanOpen>
+	</Device>
+</TcSmItem>
