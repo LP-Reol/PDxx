@@ -481,6 +481,28 @@ END_IF
 GoToTargetPosition := diff;]]></ST>
       </Implementation>
     </Method>
+    <Method Name="GoToTargetVelocity" Id="{ddda89cd-5326-4504-bde7-3b7ee32b78e1}">
+      <Declaration><![CDATA[
+METHOD PUBLIC GoToTargetVelocity : INT
+VAR_INPUT
+	nVelocity	: INT;
+	nMaxCurrent	: UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+IF fbSdoMaxCurrentValue <> nMaxCurrent THEN
+	SetMaxCurrent(nMaxCurrent);
+ELSE
+	IF SetVelocityMode() THEN
+		SetVelocity(-nVelocity); // It is negative because we want to move towards the closed position zero point from a positive valued open gripper.
+	END_IF	
+END_IF
+
+GoToTargetVelocity := nVelocity - GetVelocity();
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="GripThickness" Id="{ed44aca6-2c4f-4012-973a-268d86aa1785}">
       <Declaration><![CDATA[METHOD PUBLIC GripThickness : DINT
 VAR_INPUT
