@@ -4,13 +4,13 @@
     <Declaration><![CDATA[
 PROGRAM MAIN
 VAR
-	PDxx : FB_PDxx:= (stCANopenDevice := (AmsNetId:='10.3.0.21.2.1', PortNr := 16#1001));
-		
+	fbPDxxTester : FB_PDxxTester := (stCANopenDevice := (AmsNetId:='10.3.0.21.2.1', PortNr := 16#1001));
+	
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-PDxx();
+fbPDxxTester();
 ]]></ST>
     </Implementation>
   </POU>

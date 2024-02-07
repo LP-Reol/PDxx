@@ -1,60 +1,60 @@
 <?xml version="1.0"?>
 <TcSmItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4024.53" ClassName="CNestedPlcProjDef">
 	<Project GUID="{4E346434-4A57-47A1-B110-BE3BED7EDEC7}" Name="PDxxPLC" PrjFilePath="..\..\PDxxPLC\PDxxPLC.plcproj" TmcFilePath="..\..\PDxxPLC\PDxxPLC.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-		<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="PDxxPLC\PDxxPLC.tmc" TmcHash="{F9C9D15C-CCA6-E3CB-2C8B-EF140833D9E4}">
+		<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="PDxxPLC\PDxxPLC.tmc" TmcHash="{52F143B3-950D-74B7-5FA5-86F06EE6FD79}">
 			<Name>PDxxPLC Instance</Name>
 			<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 			<Vars VarGrpType="1">
 				<Name>PlcTask Inputs</Name>
 				<Var>
-					<Name>MAIN.PDxx.stPDOs.TxPDO_1_6041h_StatusWord</Name>
+					<Name>MAIN.fbPDxxTester.PDxx.stPDOs.TxPDO_1_6041h_StatusWord</Name>
 					<Type>UINT</Type>
 				</Var>
 				<Var>
-					<Name>MAIN.PDxx.stPDOs.TxPDO_1_6061h_ModesOfOperationDisplay</Name>
+					<Name>MAIN.fbPDxxTester.PDxx.stPDOs.TxPDO_1_6061h_ModesOfOperationDisplay</Name>
 					<Type>SINT</Type>
 				</Var>
 				<Var>
-					<Name>MAIN.PDxx.stPDOs.TxPDO_2_6064h_PositionActualValue</Name>
+					<Name>MAIN.fbPDxxTester.PDxx.stPDOs.TxPDO_2_6064h_PositionActualValue</Name>
 					<Type>DINT</Type>
 				</Var>
 				<Var>
-					<Name>MAIN.PDxx.stPDOs.TxPDO_3_6044h_VelocityActualValue</Name>
+					<Name>MAIN.fbPDxxTester.PDxx.stPDOs.TxPDO_3_6044h_VelocityActualValue</Name>
 					<Type>INT</Type>
 				</Var>
 				<Var>
-					<Name>MAIN.PDxx.stPDOs.TxPDO_4_60FDh_DigitalInputs</Name>
+					<Name>MAIN.fbPDxxTester.PDxx.stPDOs.TxPDO_4_60FDh_DigitalInputs</Name>
 					<Type>UDINT</Type>
 				</Var>
 			</Vars>
 			<Vars VarGrpType="2" AreaNo="1">
 				<Name>PlcTask Outputs</Name>
 				<Var>
-					<Name>MAIN.PDxx.stPDOs.RxPDO_1_6040h_ControlWord</Name>
+					<Name>MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_1_6040h_ControlWord</Name>
 					<Type>UINT</Type>
 				</Var>
 				<Var>
-					<Name>MAIN.PDxx.stPDOs.RxPDO_1_6060h_ModesOfOperation</Name>
+					<Name>MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_1_6060h_ModesOfOperation</Name>
 					<Type>SINT</Type>
 				</Var>
 				<Var>
-					<Name>MAIN.PDxx.stPDOs.RxPDO_1_3202h_MotorDriveSubmodeSelect</Name>
+					<Name>MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_1_3202h_MotorDriveSubmodeSelect</Name>
 					<Type>UDINT</Type>
 				</Var>
 				<Var>
-					<Name>MAIN.PDxx.stPDOs.RxPDO_2_607Ah_TargetPosition</Name>
+					<Name>MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_2_607Ah_TargetPosition</Name>
 					<Type>DINT</Type>
 				</Var>
 				<Var>
-					<Name>MAIN.PDxx.stPDOs.RxPDO_2_6081h_ProfileVelocity</Name>
+					<Name>MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_2_6081h_ProfileVelocity</Name>
 					<Type>UDINT</Type>
 				</Var>
 				<Var>
-					<Name>MAIN.PDxx.stPDOs.RxPDO_3_6042h_TargetVelocity</Name>
+					<Name>MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_3_6042h_TargetVelocity</Name>
 					<Type>INT</Type>
 				</Var>
 				<Var>
-					<Name>MAIN.PDxx.stPDOs.RxPDO_4_60FEh_DigitalOutputs</Name>
+					<Name>MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_4_60FEh_DigitalOutputs</Name>
 					<Type>UDINT</Type>
 				</Var>
 			</Vars>
@@ -77,18 +77,18 @@
 	<Mappings>
 		<OwnerA Name="PDxxPLC Instance">
 			<OwnerB Name="TIID^Device 1 (EL6751)^Box 1 (PD2-C411L18-E-65-08)">
-				<Link VarA="PlcTask Inputs^MAIN.PDxx.stPDOs.TxPDO_1_6041h_StatusWord" VarB="TxPDO 1^Inputs^Statusword"/>
-				<Link VarA="PlcTask Inputs^MAIN.PDxx.stPDOs.TxPDO_1_6061h_ModesOfOperationDisplay" VarB="TxPDO 1^Inputs^Modes of operation display"/>
-				<Link VarA="PlcTask Inputs^MAIN.PDxx.stPDOs.TxPDO_2_6064h_PositionActualValue" VarB="TxPDO 2^Inputs^Position actual value"/>
-				<Link VarA="PlcTask Inputs^MAIN.PDxx.stPDOs.TxPDO_3_6044h_VelocityActualValue" VarB="TxPDO 3^Inputs^vl velocity actual value"/>
-				<Link VarA="PlcTask Inputs^MAIN.PDxx.stPDOs.TxPDO_4_60FDh_DigitalInputs" VarB="TxPDO 4^Inputs^Digital Inputs"/>
-				<Link VarA="PlcTask Outputs^MAIN.PDxx.stPDOs.RxPDO_1_3202h_MotorDriveSubmodeSelect" VarB="RxPDO 1^Outputs^Motor drive submode select"/>
-				<Link VarA="PlcTask Outputs^MAIN.PDxx.stPDOs.RxPDO_1_6040h_ControlWord" VarB="RxPDO 1^Outputs^Controlword"/>
-				<Link VarA="PlcTask Outputs^MAIN.PDxx.stPDOs.RxPDO_1_6060h_ModesOfOperation" VarB="RxPDO 1^Outputs^Modes of operation"/>
-				<Link VarA="PlcTask Outputs^MAIN.PDxx.stPDOs.RxPDO_2_607Ah_TargetPosition" VarB="RxPDO 2^Outputs^Target Position"/>
-				<Link VarA="PlcTask Outputs^MAIN.PDxx.stPDOs.RxPDO_2_6081h_ProfileVelocity" VarB="RxPDO 2^Outputs^Profile velocity"/>
-				<Link VarA="PlcTask Outputs^MAIN.PDxx.stPDOs.RxPDO_3_6042h_TargetVelocity" VarB="RxPDO 3^Outputs^vl target velocity"/>
-				<Link VarA="PlcTask Outputs^MAIN.PDxx.stPDOs.RxPDO_4_60FEh_DigitalOutputs" VarB="RxPDO 4^Outputs^Digital Outputs #1"/>
+				<Link VarA="PlcTask Inputs^MAIN.fbPDxxTester.PDxx.stPDOs.TxPDO_1_6041h_StatusWord" VarB="TxPDO 1^Inputs^Statusword"/>
+				<Link VarA="PlcTask Inputs^MAIN.fbPDxxTester.PDxx.stPDOs.TxPDO_1_6061h_ModesOfOperationDisplay" VarB="TxPDO 1^Inputs^Modes of operation display"/>
+				<Link VarA="PlcTask Inputs^MAIN.fbPDxxTester.PDxx.stPDOs.TxPDO_2_6064h_PositionActualValue" VarB="TxPDO 2^Inputs^Position actual value"/>
+				<Link VarA="PlcTask Inputs^MAIN.fbPDxxTester.PDxx.stPDOs.TxPDO_3_6044h_VelocityActualValue" VarB="TxPDO 3^Inputs^vl velocity actual value"/>
+				<Link VarA="PlcTask Inputs^MAIN.fbPDxxTester.PDxx.stPDOs.TxPDO_4_60FDh_DigitalInputs" VarB="TxPDO 4^Inputs^Digital Inputs"/>
+				<Link VarA="PlcTask Outputs^MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_1_3202h_MotorDriveSubmodeSelect" VarB="RxPDO 1^Outputs^Motor drive submode select"/>
+				<Link VarA="PlcTask Outputs^MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_1_6040h_ControlWord" VarB="RxPDO 1^Outputs^Controlword"/>
+				<Link VarA="PlcTask Outputs^MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_1_6060h_ModesOfOperation" VarB="RxPDO 1^Outputs^Modes of operation"/>
+				<Link VarA="PlcTask Outputs^MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_2_607Ah_TargetPosition" VarB="RxPDO 2^Outputs^Target Position"/>
+				<Link VarA="PlcTask Outputs^MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_2_6081h_ProfileVelocity" VarB="RxPDO 2^Outputs^Profile velocity"/>
+				<Link VarA="PlcTask Outputs^MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_3_6042h_TargetVelocity" VarB="RxPDO 3^Outputs^vl target velocity"/>
+				<Link VarA="PlcTask Outputs^MAIN.fbPDxxTester.PDxx.stPDOs.RxPDO_4_60FEh_DigitalOutputs" VarB="RxPDO 4^Outputs^Digital Outputs #1"/>
 			</OwnerB>
 		</OwnerA>
 	</Mappings>

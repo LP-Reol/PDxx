@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_PDxxTester" Id="{6ab9b74b-eca1-4a52-9f73-7869b5ab1393}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PDxxTester
+VAR_INPUT
+	bStandAloneTesting 	: BOOL 		:= FALSE;
+	eState				: E_PDxx_State;
+	eModesOfOperation	: E_PDxx_ModesOfOperation;
+
+	stCANopenDevice 	: ST_CANopenDevice;
+	SimParameters		: ST_PDxx_SimulationParameters;
+
+	nTargetVelocity		: LREAL := 1.0;
+	nTargetPosition		: LREAL := 0.0;
+	bExecuteMove		: BOOL  := FALSE;
+END_VAR
+VAR_OUTPUT
+	bTargetPositionReceived: BOOL;
+END_VAR
+VAR
+	PDxx : FB_PDxx:= (stCANopenDevice := stCANopenDevice);
+	
+
+	
+	
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[PDxx(
+	SimParameters := SimParameters,
+	bStandAloneTesting := bStandAloneTesting,
+	eStandAloneTestState := eState,
+	eStandAloneTestModesOfOperation := eModesOfOperation,
+	bStandAloneTestSendTarget := bExecuteMove,
+	bStandAloneTestSendTargetSuccess => bTargetPositionReceived
+);]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
