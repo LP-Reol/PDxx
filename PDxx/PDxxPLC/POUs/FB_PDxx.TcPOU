@@ -469,13 +469,19 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[diff := GetPosition() - nPosition;
-IF diff = 0 THEN
-	bTrig := FALSE;
-ELSIF SetTargetPosition(nRequestedPosition := nPosition) = TRUE THEN
-	bTrig := StartMoveToTargetPosition();
+
+IF fbSdoMaxCurrentValue <> nMaxCurrent THEN
+	SetMaxCurrent(nMaxCurrent);
 ELSE
-	// This never happens at the moment,  but kept it here as reminder if the ELSIF statement above starts returning false.
-	bTrig := FALSE;
+	SetProfileVelocity(nVelocity);
+	IF diff = 0 THEN
+		bTrig := FALSE;
+	ELSIF SetTargetPosition(nRequestedPosition := nPosition) = TRUE THEN
+		bTrig := StartMoveToTargetPosition();
+	ELSE
+		// This never happens at the moment,  but kept it here as reminder if the ELSIF statement above starts returning false.
+		bTrig := FALSE;
+	END_IF
 END_IF
 
 GoToTargetPosition := diff;]]></ST>
@@ -490,12 +496,11 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[
-IF fbSdoMaxCurrentValue <> nMaxCurrent THEN
+        <ST><![CDATA[IF fbSdoMaxCurrentValue <> nMaxCurrent THEN
 	SetMaxCurrent(nMaxCurrent);
 ELSE
 	IF SetVelocityMode() THEN
-		SetVelocity(-nVelocity); // It is negative because we want to move towards the closed position zero point from a positive valued open gripper.
+		SetTargetVelocity(-nVelocity); // It is negative because we want to move towards the closed position zero point from a positive valued open gripper.
 	END_IF	
 END_IF
 
@@ -516,7 +521,7 @@ END_VAR
 	SetMaxCurrent(nMaxCurrent);
 ELSE
 	IF SetVelocityMode() THEN
-		SetVelocity(-nVelocity); // It is negative because we want to move towards the closed position zero point from a positive valued open gripper.
+		SetTargetVelocity(-nVelocity); // It is negative because we want to move towards the closed position zero point from a positive valued open gripper.
 	END_IF	
 END_IF
 
@@ -549,7 +554,7 @@ END_VAR]]></Declaration>
 	determine whether a end limit has been found. *)
 
 IF SetVelocityMode() THEN
-	SetVelocity(nVelocity);
+	SetTargetVelocity(nVelocity);
 ELSE
 	Status.nMaxActualPosition := GetActualPosition();
 	Status.nMinActualPosition := GetActualPosition();
@@ -796,6 +801,23 @@ ELSE
 END_IF]]></ST>
       </Implementation>
     </Method>
+    <Method Name="SetProfileVelocity" Id="{161b5e1d-59d0-46cc-9f23-9c7e3207a614}">
+      <Declaration><![CDATA[
+METHOD PUBLIC SetProfileVelocity
+VAR_INPUT
+	nVelocity : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+IF nVelocity < 0 THEN
+	stPDOs.RxPDO_2_6081h_ProfileVelocity := INT_TO_UDINT(-nVelocity);
+ELSE
+	stPDOs.RxPDO_2_6081h_ProfileVelocity := INT_TO_UDINT(nVelocity);	
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="SetRangeForDigitalInput" Id="{88afb56b-e19f-436e-99ed-ec7a8a68dc03}">
       <Declaration><![CDATA[METHOD PUBLIC SetRangeForDigitalInput : BOOL
 VAR_INPUT
@@ -920,8 +942,8 @@ END_IF
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="SetVelocity" Id="{58b76007-4f62-471c-9884-97a933b7dfae}">
-      <Declaration><![CDATA[METHOD PUBLIC SetVelocity
+    <Method Name="SetTargetVelocity" Id="{58b76007-4f62-471c-9884-97a933b7dfae}">
+      <Declaration><![CDATA[METHOD PUBLIC SetTargetVelocity
 VAR_INPUT
 	nVelocity : INT;
 END_VAR
@@ -945,7 +967,7 @@ END_VAR
 	E_PDxx_State.READY_TO_SWITCH_ON:
 		SwitchOnPowerToMotor();
 	E_PDxx_State.SWITCHED_ON:
-		SetVelocity(0);
+		SetTargetVelocity(0);
 		IF eModesOfOperation <> E_PDxx_ModesOfOperation.VELOCITY_MODE THEN
 			ChangeModesOfOperation(E_PDxx_ModesOfOperation.VELOCITY_MODE);
 		ELSE
