@@ -1,0 +1,142 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_PDxxTester" Id="{6ab9b74b-eca1-4a52-9f73-7869b5ab1393}" SpecialFunc="None">
+    <Declaration><![CDATA[
+FUNCTION_BLOCK FB_PDxxTester
+VAR_INPUT
+
+	stCANopenDevice 	: ST_CANopenDevice;
+//	SimParameters		: ST_PDxx_SimulationParameters;
+//	bStandAloneTesting 	: BOOL 		:= FALSE;
+
+	nTargetVelocity		: INT := 100;			// what unit ?
+	nTargetPosition		: DINT := 0;		// what unit ?
+	nTargetCurrent		: UDINT := 1000;	// mA ?
+//	bExecuteMove		: BOOL  := FALSE;
+	
+	nFeedRate			: UDINT := 44533;
+	nFeedRateDivisor	: UDINT	:= 2000;
+	nZeroingMaxCurrent	: UDINT := 1000;
+	bReversePolarity	: BOOL := FALSE;
+	
+	eMode : (NO_CHANGE := 0, RESET, HOME, POSITION, VELOCITY);
+END_VAR
+
+VAR_OUTPUT
+//	bTargetPositionReceived: BOOL;
+	eState				: E_PDxx_State;
+	eModesOfOperation	: E_PDxx_ModesOfOperation;
+	
+	Status 				: ST_PDxx_Status;
+	StateEntryTime		: TIME;
+	bStateComplete		: BOOL;
+END_VAR
+
+VAR
+	PDxx : FB_PDxx;
+//	trExecute : R_TRIG;
+	eLastMode 			: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+ExecuteState();
+
+PDxx(
+	stCANopenDevice := stCANopenDevice,
+//	SimParameters := SimParameters,
+//	bStandAloneTesting := bStandAloneTesting,
+//	bStandAloneTestSendTarget := bExecuteMove,
+//	bStandAloneTestSendTargetSuccess => bTargetPositionReceived,
+	Status => Status
+);
+
+eState := PDxx.eState;
+eModesOfOperation := PDxx.eModesOfOperation;
+]]></ST>
+    </Implementation>
+    <Method Name="ExecuteState" Id="{a8b32aac-b683-4c2b-af7a-c32c14bff8cd}">
+      <Declaration><![CDATA[
+METHOD PRIVATE ExecuteState
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+IF eMode <> NO_CHANGE THEN
+	IF eMode <> eLastMode THEN
+		eLastMode := eMode;
+		StateEntryTime := TIME();
+		bStateComplete := FALSE;
+	END_IF
+	
+//	trExecute(CLK := bExecuteMove);	
+	
+	CASE eMode OF
+
+		RESET:
+			M_Resetting();
+
+		HOME:
+			PDxx.ProbeActualPositionLimits(nTargetVelocity);
+
+		POSITION:
+//			IF trExecute.Q = TRUE THEN
+				PDxx.GoToTargetPosition(nPosition := nTargetPosition, nVelocity := nTargetVelocity, nMaxCurrent := nTargetCurrent);		
+//			END_IF
+
+		VELOCITY:
+//			IF trExecute.Q = TRUE THEN
+				PDxx.GoToTargetVelocity(nVelocity := nTargetVelocity, nMaxCurrent := nTargetCurrent);		
+//			END_IF		
+
+	END_CASE
+	
+	IF bStateComplete THEN
+		eMode := NO_CHANGE;
+	END_IF
+
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="M_Resetting" Id="{8d8f3fc9-d0e7-4995-88cf-cb332b969ae9}">
+      <Declaration><![CDATA[
+METHOD PRIVATE M_Resetting : BOOL
+VAR
+	bFeedRateSetpointReached 	: BOOL := FALSE;
+	bMaxCurrentSetpointReached 	: BOOL := FALSE;
+	bPolaritySetpointReached	: BOOL := FALSE;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+IF PDxx.SetFeedRate(nFeedRate := nFeedRate, nDivisor := nFeedRateDivisor) THEN
+	bFeedRateSetpointReached := TRUE;
+END_IF
+
+IF PDxx.fbSdoMaxCurrentValue = nZeroingMaxCurrent THEN
+	bMaxCurrentSetpointReached := TRUE;
+ELSE
+	PDxx.SetMaxCurrent(nZeroingMaxCurrent);
+END_IF
+
+IF 	PDxx.IsPolarityReversed() = bReversePolarity THEN
+	bPolaritySetpointReached := TRUE;
+ELSE
+	bPolaritySetpointReached := PDxx.SetReversePolarity(bReversePolarity);
+END_IF
+
+(* COMPLETE STATE *)
+IF 	bFeedRateSetpointReached AND
+	bMaxCurrentSetpointReached AND
+	bPolaritySetpointReached THEN 
+	IF PDxx.SwitchOnPowerToMotor() THEN
+		bStateComplete := TRUE;
+	END_IF
+ELSE
+	PDxx.SwitchOffPowerToMotor();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
