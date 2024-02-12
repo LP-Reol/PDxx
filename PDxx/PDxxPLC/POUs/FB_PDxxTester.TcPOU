@@ -94,11 +94,13 @@ IF eMode <> NO_CHANGE THEN
 		eMode := NO_CHANGE;
 	END_IF
 
-END_IF]]></ST>
+END_IF
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="M_Resetting" Id="{8d8f3fc9-d0e7-4995-88cf-cb332b969ae9}">
-      <Declaration><![CDATA[METHOD PRIVATE M_Resetting : BOOL
+      <Declaration><![CDATA[
+METHOD PRIVATE M_Resetting : BOOL
 VAR
 	bFeedRateSetpointReached 	: BOOL := FALSE;
 	bMaxCurrentSetpointReached 	: BOOL := FALSE;
@@ -107,7 +109,6 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-
 IF PDxx.SetFeedRate(nFeedRate := nFeedRate, nDivisor := nFeedRateDivisor) THEN
 	bFeedRateSetpointReached := TRUE;
 END_IF
@@ -133,7 +134,8 @@ IF 	bFeedRateSetpointReached AND
 	END_IF
 ELSE
 	PDxx.SwitchOffPowerToMotor();
-END_IF]]></ST>
+END_IF
+]]></ST>
       </Implementation>
     </Method>
   </POU>
