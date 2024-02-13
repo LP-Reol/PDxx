@@ -45,6 +45,13 @@ VAR_INPUT
 	
 	fbSdoSIUnitPosition				: FB_SDO	:= (CO_Index:=16#60A8, CO_SubIndex:=16#0, DataLength:=4, 	CO_Name:='SI Unit Position', 		stCANopenDevice:=stCANopenDevice);
 	fbSdoSIUnitPositionValue		: UDINT;
+	
+	fbSdoProfileAcceleration		: FB_SDO	:= (CO_Index:=16#6083, CO_SubIndex:=16#0, DataLength:=4, 	CO_Name:='Profile Acceleration', 	stCANopenDevice:=stCANopenDevice);
+	fbSdoProfileAccelerationValue	: UDINT;
+
+	fbSdoProfileDeceleration		: FB_SDO	:= (CO_Index:=16#6084, CO_SubIndex:=16#0, DataLength:=4, 	CO_Name:='Profile Deceleration', 	stCANopenDevice:=stCANopenDevice);
+	fbSdoProfileDecelerationValue	: UDINT;
+
 END_VAR
 
 VAR_OUTPUT
@@ -769,6 +776,62 @@ IF fbSdoMaxCurrentValue = nMaxCurrent THEN
 	SetMaxCurrent := TRUE;
 ELSE
 	SetMaxCurrent := FALSE;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetProfileAcceleration" Id="{3101720c-b6e2-474f-9dab-adf8a8b87c4a}">
+      <Declaration><![CDATA[
+METHOD PUBLIC SetProfileAcceleration : BOOL
+VAR_INPUT
+	nProfileAcceleration : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+fbSdoProfileAcceleration.SetWriteDataFromUDINT(nProfileAcceleration);
+fbSdoProfileAcceleration(bStartReading := TRUE, bStartWriting := TRUE);
+
+IF SimParameters.bActivateSimulation = TRUE THEN
+	fbSdoProfileAccelerationValue := nProfileAcceleration;
+ELSE
+	IF fbSdoProfileAcceleration.ReadDataAvailable THEN
+		fbSdoProfileAccelerationValue := fbSdoProfileAcceleration.GetReadDataAsUDINT();
+	END_IF
+END_IF
+		
+IF fbSdoProfileAccelerationValue = nProfileAcceleration THEN
+	SetProfileAcceleration := TRUE;
+ELSE
+	SetProfileAcceleration := FALSE;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetProfileDeceleration" Id="{f4aeb416-e264-440d-8b38-f9c05ff6bd0e}">
+      <Declaration><![CDATA[
+METHOD PUBLIC SetProfileDeceleration : BOOL
+VAR_INPUT
+	nProfileDeceleration : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+fbSdoProfileDeceleration.SetWriteDataFromUDINT(nProfileDeceleration);
+fbSdoProfileDeceleration(bStartReading := TRUE, bStartWriting := TRUE);
+
+IF SimParameters.bActivateSimulation = TRUE THEN
+	fbSdoProfileDecelerationValue := nProfileDeceleration;
+ELSE
+	IF fbSdoProfileDeceleration.ReadDataAvailable THEN
+		fbSdoProfileDecelerationValue := fbSdoProfileDeceleration.GetReadDataAsUDINT();
+	END_IF
+END_IF
+		
+IF fbSdoProfileDecelerationValue = nProfileDeceleration THEN
+	SetProfileDeceleration := TRUE;
+ELSE
+	SetProfileDeceleration := FALSE;
 END_IF
 ]]></ST>
       </Implementation>
