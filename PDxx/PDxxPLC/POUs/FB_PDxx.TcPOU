@@ -364,6 +364,10 @@ ELSIF 	NOT stStatusWord.SwitchOnDisabled									AND LowerNibble = 2#1000 THEN	e
 ELSE																										eState := E_PDxx_State.UNKNOWN_STATE;	
 END_IF
 
+IF eState = E_PDxx_State.FAULT THEN
+	ChangeState(E_PDxx_State.SWITCH_ON_DISABLED);
+END_IF
+
 Status.nCurrentPosition := GetPosition();
 Status.nCurrentVelocity := GetVelocity();]]></ST>
       </Implementation>
