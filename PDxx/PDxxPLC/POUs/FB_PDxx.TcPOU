@@ -547,7 +547,8 @@ GripThickness := GetPosition() - nObjectThickness;]]></ST>
       </Implementation>
     </Method>
     <Method Name="ProbeActualPositionLimits" Id="{7c7a05fe-7539-41c4-b37c-8f8bb00e3d51}">
-      <Declaration><![CDATA[METHOD PUBLIC ProbeActualPositionLimits : BOOL
+      <Declaration><![CDATA[
+METHOD PUBLIC ProbeActualPositionLimits : BOOL
 VAR_INPUT
 	nVelocity : INT;
 END_VAR
@@ -560,9 +561,11 @@ END_VAR
 VAR
 	nActualVelocity			: INT;
 	nActualPosition			: DINT;
-END_VAR]]></Declaration>
+END_VAR
+]]></Declaration>
       <Implementation>
-        <ST><![CDATA[(* 	Returns true whenever the method was able to push past
+        <ST><![CDATA[
+(* 	Returns true whenever the method was able to push past
 	one of the limits. External function can monitor how 
 	long this method has returned FALSE, in order to 
 	determine whether a end limit has been found. *)
@@ -599,7 +602,8 @@ ELSE
 	ELSE
 		ProbeActualPositionLimits := TRUE;		
 	END_IF
-END_IF]]></ST>
+END_IF
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="ReleaseGripToThicknessMargin" Id="{bac69037-d9ae-4417-875b-6060a2afe036}">
