@@ -552,10 +552,13 @@ VAR_INPUT
 	nVelocity : INT;
 END_VAR
 
-VAR
-	nActualVelocity			: INT;
+VAR_INST
 	nMinStartActualPosition : DINT;
 	nMaxStartActualPosition : DINT;
+END_VAR
+
+VAR
+	nActualVelocity			: INT;
 	nActualPosition			: DINT;
 END_VAR]]></Declaration>
       <Implementation>
