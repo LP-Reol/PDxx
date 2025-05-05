@@ -474,7 +474,6 @@ VAR_INPUT
 	nMaxCurrent	: UDINT;
 END_VAR
 VAR_INST
-	bTrig 		: BOOL	:= FALSE;
 	diff 		: DINT;
 END_VAR
 ]]></Declaration>
@@ -485,13 +484,10 @@ IF fbSdoMaxCurrentValue <> nMaxCurrent THEN
 	SetMaxCurrent(nMaxCurrent);
 ELSE
 	SetProfileVelocity(nVelocity);
-	IF diff = 0 THEN
-		bTrig := FALSE;
-	ELSIF SetTargetPosition(nRequestedPosition := nPosition) = TRUE THEN
-		bTrig := StartMoveToTargetPosition();
-	ELSE
-		// This never happens at the moment,  but kept it here as reminder if the ELSIF statement above starts returning false.
-		bTrig := FALSE;
+	IF SetProfilePositionMode() = TRUE THEN
+		IF SetTargetPosition(nRequestedPosition := nPosition) = TRUE THEN
+			StartMoveToTargetPosition();
+		END_IF
 	END_IF
 END_IF
 
@@ -533,6 +529,7 @@ END_VAR
 ELSE
 	IF SetVelocityMode() THEN
 		SetTargetVelocity(-nVelocity); // It is negative because we want to move towards the closed position zero point from a positive valued open gripper.
+		Status.nTargetPosition := GetPosition();
 	END_IF	
 END_IF
 
@@ -623,18 +620,21 @@ END_VAR
       </Implementation>
     </Method>
     <Method Name="ResetControlWordBit4" Id="{fc92a71a-2d31-4fca-991a-9704be85d5f4}">
-      <Declaration><![CDATA[METHOD PRIVATE ResetControlWordBit4 : BOOL
+      <Declaration><![CDATA[
+METHOD PRIVATE ResetControlWordBit4 : BOOL
 VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF stStatusWord.OperationModeSpecific_bit12 THEN
-	IF 	eState = E_PDxx_State.OPERATION_ENABLED AND 
-		eModesOfOperation = E_PDxx_ModesOfOperation.PROFILE_POSITION_MODE THEN
-		stControlWord.OperationModeSpecific_bit_4 := FALSE;
-		stPDOs.RxPDO_1_6040h_ControlWord.4 := stControlWord.OperationModeSpecific_bit_4;	
-	END_IF
-END_IF]]></ST>
+        <ST><![CDATA[
+IF eState = E_PDxx_State.OPERATION_ENABLED AND 
+   eModesOfOperation = E_PDxx_ModesOfOperation.PROFILE_POSITION_MODE AND
+   stControlWord.OperationModeSpecific_bit_4 = TRUE AND
+   stStatusWord.OperationModeSpecific_bit12 = TRUE THEN
+	stControlWord.OperationModeSpecific_bit_4 := FALSE;
+	stPDOs.RxPDO_1_6040h_ControlWord.4 := stControlWord.OperationModeSpecific_bit_4;	
+END_IF
+]]></ST>
       </Implementation>
     </Method>
     <Action Name="ResetStatusAndSDOs" Id="{6d8f9502-6686-48cc-8558-8b0271768af0}">
@@ -998,21 +998,23 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="SetTargetPosition" Id="{f21760ba-70aa-4b6c-acd5-a0513af7c792}">
-      <Declaration><![CDATA[METHOD PRIVATE SetTargetPosition : BOOL
+      <Declaration><![CDATA[
+METHOD PRIVATE SetTargetPosition : BOOL
 VAR_INPUT
 	nRequestedPosition : DINT;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF TRUE THEN
-// placeholder for making a boundary check or something before setting target position
+        <ST><![CDATA[
+IF Status.nTargetPosition <> nRequestedPosition AND
+   stStatusWord.OperationModeSpecific_bit12 = FALSE AND
+   stControlWord.OperationModeSpecific_bit_4 = FALSE THEN
 	Status.nTargetPosition := nRequestedPosition;
 	stPDOs.RxPDO_2_607Ah_TargetPosition := GetActualPositionFromNormalisedPosition(Status.nTargetPosition);
 	SetTargetPosition := TRUE;
 ELSE
 	SetTargetPosition := FALSE;
 END_IF
-
 ]]></ST>
       </Implementation>
     </Method>
