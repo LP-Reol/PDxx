@@ -475,6 +475,7 @@ VAR_INPUT
 END_VAR
 VAR_INST
 	diff 		: DINT;
+	startMoveInCycles : ULINT := 0;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -486,7 +487,14 @@ ELSE
 	SetProfileVelocity(nVelocity);
 	IF SetProfilePositionMode() = TRUE THEN
 		IF SetTargetPosition(nRequestedPosition := nPosition) = TRUE THEN
+			startMoveInCycles := 2;
+//			StartMoveToTargetPosition();
+		END_IF
+		IF startMoveInCycles = 1 THEN
 			StartMoveToTargetPosition();
+			startMoveInCycles := 0;
+		ELSIF startMoveInCycles > 0 THEN
+			startMoveInCycles := startMoveInCycles - 1;
 		END_IF
 	END_IF
 END_IF
