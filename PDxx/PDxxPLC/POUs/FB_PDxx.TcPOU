@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
   <POU Name="FB_PDxx" Id="{97c1bf8a-88d3-43c0-aca9-b8d8817bfdd0}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_PDxx
 
@@ -488,7 +488,6 @@ ELSE
 	IF SetProfilePositionMode() = TRUE THEN
 		IF SetTargetPosition(nRequestedPosition := nPosition) = TRUE THEN
 			startMoveInCycles := 2;
-//			StartMoveToTargetPosition();
 		END_IF
 		IF startMoveInCycles = 1 THEN
 			StartMoveToTargetPosition();
