@@ -17,9 +17,9 @@
     <Implicit_Jitter_Distribution>{26b198da-1bb0-499c-813b-5f7bf4afb7a2}</Implicit_Jitter_Distribution>
     <LibraryReferences>{ab2cf576-b3cd-4536-a446-fb6d3b8d76ca}</LibraryReferences>
     <Company>iMusic AS</Company>
-    <Released>true</Released>
+    <Released>false</Released>
     <Title>PDxx</Title>
-    <ProjectVersion>0.2.3.0</ProjectVersion>
+    <ProjectVersion>0.3.0.8</ProjectVersion>
     <LibraryCategories>
       <LibraryCategory xmlns="">
         <Id>{1ae6d400-55f5-48a0-9fa9-d6a1ce9670ee}</Id>
