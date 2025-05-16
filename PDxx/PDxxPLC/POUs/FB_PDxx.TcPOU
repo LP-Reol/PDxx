@@ -1131,6 +1131,7 @@ END_CASE
 
 IF eState = E_PDxx_State.SWITCH_ON_DISABLED THEN
 	SwitchOffPowerToMotor := TRUE;
+	Status.nTargetPosition := GetPosition();
 ELSE
 	SwitchOffPowerToMotor := FALSE;
 END_IF]]></ST>
@@ -1149,6 +1150,7 @@ END_CASE
 
 IF eState = E_PDxx_State.SWITCHED_ON THEN
 	SwitchOnPowerToMotor := TRUE;
+	Status.nTargetPosition := GetPosition();
 ELSE
 	SwitchOnPowerToMotor := FALSE;
 END_IF]]></ST>
