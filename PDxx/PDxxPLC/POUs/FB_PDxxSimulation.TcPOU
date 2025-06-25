@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
   <POU Name="FB_PDxxSimulation" Id="{a4499cb8-8c92-424d-9fa9-d12ea02e01ac}" SpecialFunc="None">
     <Declaration><![CDATA[
 FUNCTION_BLOCK FB_PDxxSimulation
@@ -270,6 +270,7 @@ END_IF
 
 IF bPositionMoveActive = TRUE THEN
 	nTargetPosition := DINT_TO_LREAL(RxPDO_2_607Ah_TargetPosition);
+	stStatusWord.TargetReached := FALSE;
 
 	IF nTargetPosition < nPosition THEN
 		TxPDO_3_6044h_VelocityActualValue  := -UDINT_TO_INT(RxPDO_2_6081h_ProfileVelocity);
