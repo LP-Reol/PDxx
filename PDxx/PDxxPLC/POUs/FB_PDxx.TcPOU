@@ -604,9 +604,11 @@ ELSE
 	   (nActualVelocity < 0 AND nActualPosition < nMinStartActualPosition) THEN
 		ProbeActualPositionLimits := FALSE;
 	ELSE
-		ProbeActualPositionLimits := TRUE;		
+		ProbeActualPositionLimits := TRUE;
 	END_IF
 END_IF
+
+Status.nTargetPosition := GetPosition();
 ]]></ST>
       </Implementation>
     </Method>
