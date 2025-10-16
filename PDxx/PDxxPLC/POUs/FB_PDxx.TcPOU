@@ -178,16 +178,17 @@ END_VAR
 VAR
 	ControlWord : UINT;
 END_VAR
-
-
-
+VAR_INST
+	bLastFaultResetBitState : BOOL;
+END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[ControlWord := 0;
 
 // We check first if we need to recover from a Fault state
 IF eState = E_PDxx_State.FAULT AND eState <> eRequestedState THEN
-	stControlWord.FaultReset_bit_7		:= TRUE;	// "Fault reset" transition 13
+	bLastFaultResetBitState := bLastFaultResetBitState XOR 1; 
+	stControlWord.FaultReset_bit_7		:= bLastFaultResetBitState;	// "Fault reset" transition 13 on rising edge
 	ControlWord.7 := stControlWord.FaultReset_bit_7;
 	stPDOs.RxPDO_1_6040h_ControlWord := ControlWord;
 	RETURN;
