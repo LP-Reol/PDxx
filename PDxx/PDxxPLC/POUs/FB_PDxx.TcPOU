@@ -202,14 +202,27 @@ END_VAR
       <Implementation>
         <ST><![CDATA[ControlWord := 0;
 
-// We check first if we need to recover from a Fault state
-IF eState = E_PDxx_State.FAULT AND eState <> eRequestedState THEN
-	bLastFaultResetBitState := bLastFaultResetBitState XOR 1; 
-	stControlWord.FaultReset_bit_7		:= bLastFaultResetBitState;	// "Fault reset" transition 13 on rising edge
+
+IF eState = E_PDxx_State.FAULT THEN
+	IF Status.bHasError = FALSE THEN
+		bLastFaultResetBitState := bLastFaultResetBitState XOR 1; 
+		stControlWord.FaultReset_bit_7	:= bLastFaultResetBitState;	// "Fault reset" transition 13 on rising edge
+	ELSE
+		stControlWord.FaultReset_bit_7 := FALSE;	// "Fault reset" transition 13 on rising edge		
+	END_IF
 	ControlWord.7 := stControlWord.FaultReset_bit_7;
 	stPDOs.RxPDO_1_6040h_ControlWord := ControlWord;
 	RETURN;
 END_IF
+
+// We check first if we need to recover from a Fault state
+//IF eState = E_PDxx_State.FAULT AND eState <> eRequestedState THEN
+//	bLastFaultResetBitState := bLastFaultResetBitState XOR 1; 
+//	stControlWord.FaultReset_bit_7		:= bLastFaultResetBitState;	// "Fault reset" transition 13 on rising edge
+//	ControlWord.7 := stControlWord.FaultReset_bit_7;
+//	stPDOs.RxPDO_1_6040h_ControlWord := ControlWord;
+//	RETURN;
+//END_IF
 
 (* All of the below cases are taken from the transistion diagram on p. 34 in the manual *)
 
@@ -299,6 +312,7 @@ stIO.Input8 := stPDOs.TxPDO_4_60FDh_DigitalInputs.23;
 fbSdoErrorRegister(bStartReading := TRUE);
 IF fbSdoErrorRegister.ReadDataAvailable THEN
 	fbSdoErrorRegisterValue := fbSdoErrorRegister.GetReadDataAsUSINT();
+	Status.bHasError := fbSdoErrorRegisterValue <> 0;
 	Status.stErrorRegister := ParseErrorRegister(fbSdoErrorRegisterValue);
 END_IF
 

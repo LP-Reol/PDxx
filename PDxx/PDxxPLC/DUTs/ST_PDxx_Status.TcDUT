@@ -11,6 +11,7 @@ STRUCT
 	nTargetPosition				: DINT;
 	nMinActualPosition			: DINT;
 	nMaxActualPosition			: DINT;
+	bHasError					: BOOL;
 	stErrorRegister				: ST_PDxx_ErrorRegister;
 	nNumErrors					: USINT;
 	ErrorField					: ARRAY [1..8] OF ST_PDxx_PredefinedErrorField;
