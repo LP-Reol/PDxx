@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <DUT Name="ST_PDxx_ErrorRegister" Id="{6426c674-8a5c-4208-9ae4-bc85675c302d}">
+    <Declaration><![CDATA[
+TYPE ST_PDxx_ErrorRegister :
+STRUCT
+	// Taken from manual section "1001h Error Register"
+	GEN : BIT; // bit 0 - General error
+	CUR : BIT; // bit 1 - Current
+	VOL : BIT; // bit 2 - Voltage
+	TEMP: BIT; // bit 3 - Temperature
+	COM : BIT; // bit 4 - Communication
+	PROF: BIT; // bit 5 - Relates TO the device profile
+	RES : BIT; // bit 6 - Reserved, always "0"
+	MAN : BIT; // bit 7 - Manufacturer-specific: The motor turns in the wrong direction.
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
