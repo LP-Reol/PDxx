@@ -711,8 +711,8 @@ END_VAR
 //ParseErrorField := ErrorField;
 
 ParseErrorField.nErrorCode 		:= UDINT_TO_UINT(nErrorFieldAsUDINT);
-ParseErrorField.stErrorClass	:= ParseErrorRegister(UDINT_TO_USINT(SHR(nErrorFieldAsUDINT,2)));
-ParseErrorField.nErrorNumber	:= UDINT_TO_USINT(SHR(nErrorFieldAsUDINT,3));
+ParseErrorField.stErrorClass	:= ParseErrorRegister(UDINT_TO_USINT(SHR(nErrorFieldAsUDINT,16)));
+ParseErrorField.nErrorNumber	:= UDINT_TO_USINT(SHR(nErrorFieldAsUDINT,24));
 ]]></ST>
       </Implementation>
     </Method>
