@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <DUT Name="E_PDxx_ErrorNumber" Id="{a46f44c1-9442-4491-a5c8-980c3b60612a}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_PDxx_ErrorNumber :
+(
+	// The following is taken from the manual for the PD4-E(CANopen) section 1003h.
+	// It pertains to the firmware version v1748, so other firmware versions and other types of motors may have different error number 
+	WATCHDOG_RESET 						:= 0, // Watchdog-Reset
+	INPUT_VOLTAGE_TOO_HIGH				:= 1, // Input voltage too high
+	OUTPUT_CURRENT_TOO_HIGH 			:= 2, // Output current too high
+	INPUT_VOLTAGE_TOO_LOW 				:= 3, // Input voltage too low
+	ERROR_AT_FIELDBUS 					:= 4, // Error at fieldbus
+	MOTOR_TURNS_WRONG_DIRECTION			:= 5, // Motor turns – in spite of active block – in the wrong direction
+	NMT_MASTER_TAKES_TOO_LONG_TO_SEND	:= 6, // CANopen only: NMT master takes too long to send nodeguarding request
+	ENCODER_ERROR_ELECTRICAL_FAULT		:= 7, // Encoder error due to electrical fault or defective hardware
+	ENCODER_ERROR_INDEX_NOT_FOUND		:= 8, // Encoder error; index not found during the auto setup
+	ERROR_IN_AB_TRACK					:= 9, // Error in the AB track
+	POSITIVE_LIMIT_SWITCH_ZONE_EXCEEDED := 10, //  Positive limit switch and tolerance zone exceeded
+	NEGATIVE_LIMIT_SWITCH_ZONE_EXCEEDED := 11, // Negative limit switch and tolerance zone exceeded
+	DEVICE_TEMPERATURE_ERROR			:= 12, // Device temperature above 80°C
+	FOLLOWING_ERROR_WINDOW_AND_TIMEOUT	:= 13, // The values of object 6065h (Following Error Window) and object 6066h (Following Error Time Out) were exceeded; a fault was triggered.
+	NONVOLATIVE_MEMORY_FULL_FOURTEEN	:= 14, // Warning: Nonvolatile memory full; controller must be restarted for cleanup work.
+	MOTOR_BLOCKED						:= 15, // Motor blocked
+	NONVOLATIVE_MEMORY_DAMAGED			:= 16, // Warning: Nonvolatile memory damaged; controller must be restarted for cleanup work.
+	SLAVE_TOOK_TOO_LONG_TO_SEND_PDO		:= 17, // CANopen only: Slave took too long TO send PDO messages.
+	HALL_SENSOR_FAULTY					:= 18, // Hall sensor faulty
+	PDO_NOT_PROCESSED_DUE_LENGTH_ERROR	:= 19, // CANopen only: PDO not processed due to a length error
+	PDO_LENGTH_EXCEEDED					:= 20, // CANopen only: PDO length exceeded
+	NONVOLATIVE_MEMORY_FULL_TWENTY_ONE	:= 21, // Warning: Nonvolatile memory full; controller must be restarted for cleanup work.
+	RATED_CURRENT_MUST_BE_SET			:= 22, // Rated current must be set (203Bh:01h)
+	ENCODER_RESOLUTION_SET_INCORRECTLY	:= 23, // Encoder resolution, number of pole pairs and some other values are incorrect.
+	MOTOR_CURRENT_TOO_HIGH_ADJUST_PI	:= 24, // Motor current is too high, adjust the PI parameters.
+	INTERNAL_SOFTWARE_ERROR				:= 25, // Internal software error, generic
+	CURRENT_TOO_HIGH_AT_DIGITAL_OUTPUT	:= 26, // Current too high at digital output
+	UNEXPECTED_SYNC_LENGTH				:= 27, // CANopen only: Unexpected sync length
+	OP_SWITCH_WITHOUT_STOPPING_MOTOR	:= 28, // EtherCAT only: The motor was stopped because EtherCAT switched state from OP to either SafeOP or PreOP without first stopping the motor.
+	SLIPPAGE_ERROR_TOO_LARGE			:= 30 // Error in speed monitoring: slippage error too large
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

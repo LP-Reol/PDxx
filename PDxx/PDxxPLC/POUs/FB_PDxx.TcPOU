@@ -16,6 +16,22 @@ VAR_INPUT
 	
 	stCANopenDevice : ST_CANopenDevice;
 
+	fbSdoErrorRegister				: FB_SDO	:= (CO_Index:=16#1001, CO_SubIndex:=16#0, DataLength:=1, 	CO_Name:='Error Register', 			stCANopenDevice:=stCANopenDevice);
+	fbSdoErrorRegisterValue 		: USINT;
+
+	fbSdoNumberOfErrors				: FB_SDO	:= (CO_Index:=16#1003, CO_SubIndex:=16#0, DataLength:=1, 	CO_Name:='Number Of Errors', 		stCANopenDevice:=stCANopenDevice);
+	fbSdoNumberOfErrorsValue 		: USINT;
+
+	fbSdoErrorField_1				: FB_SDO	:= (CO_Index:=16#1003, CO_SubIndex:=16#1, DataLength:=4, 	CO_Name:='Standard Error Field 1', 	stCANopenDevice:=stCANopenDevice);
+	fbSdoErrorField_2				: FB_SDO	:= (CO_Index:=16#1003, CO_SubIndex:=16#2, DataLength:=4, 	CO_Name:='Standard Error Field 2', 	stCANopenDevice:=stCANopenDevice);
+	fbSdoErrorField_3				: FB_SDO	:= (CO_Index:=16#1003, CO_SubIndex:=16#3, DataLength:=4, 	CO_Name:='Standard Error Field 3', 	stCANopenDevice:=stCANopenDevice);
+	fbSdoErrorField_4				: FB_SDO	:= (CO_Index:=16#1003, CO_SubIndex:=16#4, DataLength:=4, 	CO_Name:='Standard Error Field 4', 	stCANopenDevice:=stCANopenDevice);
+	fbSdoErrorField_5				: FB_SDO	:= (CO_Index:=16#1003, CO_SubIndex:=16#5, DataLength:=4, 	CO_Name:='Standard Error Field 5', 	stCANopenDevice:=stCANopenDevice);
+	fbSdoErrorField_6				: FB_SDO	:= (CO_Index:=16#1003, CO_SubIndex:=16#6, DataLength:=4, 	CO_Name:='Standard Error Field 6', 	stCANopenDevice:=stCANopenDevice);
+	fbSdoErrorField_7				: FB_SDO	:= (CO_Index:=16#1003, CO_SubIndex:=16#7, DataLength:=4, 	CO_Name:='Standard Error Field 7', 	stCANopenDevice:=stCANopenDevice);
+	fbSdoErrorField_8				: FB_SDO	:= (CO_Index:=16#1003, CO_SubIndex:=16#8, DataLength:=4, 	CO_Name:='Standard Error Field 8', 	stCANopenDevice:=stCANopenDevice);
+	fbSdoErrorFieldValue			: ARRAY [1..8] OF UDINT;
+
 	fbSdoMaxCurrent					: FB_SDO	:= (CO_Index:=16#2031, CO_SubIndex:=16#0, DataLength:=4, 	CO_Name:='Maximum Current', 		stCANopenDevice:=stCANopenDevice);
 	fbSdoMaxCurrentValue 			: UDINT;
 
@@ -76,6 +92,7 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
+CheckForErrors();
 CheckState();
 CheckModesOfOperation();
 CheckDigitalInputs();
@@ -183,12 +200,16 @@ VAR_INST
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[ControlWord := 0;
+        <ST><![CDATA[
+ControlWord := 0;
 
-// We check first if we need to recover from a Fault state
-IF eState = E_PDxx_State.FAULT AND eState <> eRequestedState THEN
-	bLastFaultResetBitState := bLastFaultResetBitState XOR 1; 
-	stControlWord.FaultReset_bit_7		:= bLastFaultResetBitState;	// "Fault reset" transition 13 on rising edge
+IF eState = E_PDxx_State.FAULT THEN
+	IF Status.bHasError = FALSE THEN
+		bLastFaultResetBitState := bLastFaultResetBitState XOR 1; 
+		stControlWord.FaultReset_bit_7	:= bLastFaultResetBitState;	// "Fault reset" transition 13 on rising edge
+	ELSE
+		stControlWord.FaultReset_bit_7 := FALSE;	// "Fault reset" transition 13 on rising edge		
+	END_IF
 	ControlWord.7 := stControlWord.FaultReset_bit_7;
 	stPDOs.RxPDO_1_6040h_ControlWord := ControlWord;
 	RETURN;
@@ -276,6 +297,120 @@ stIO.Input8 := stPDOs.TxPDO_4_60FDh_DigitalInputs.23;
 ]]></ST>
       </Implementation>
     </Method>
+    <Action Name="CheckForErrors" Id="{48e8621d-1456-4550-91c6-71a925462dae}">
+      <Implementation>
+        <ST><![CDATA[
+fbSdoErrorRegister(bStartReading := TRUE);
+IF fbSdoErrorRegister.ReadDataAvailable THEN
+	fbSdoErrorRegisterValue := fbSdoErrorRegister.GetReadDataAsUSINT();
+	Status.bHasError := fbSdoErrorRegisterValue <> 0;
+	Status.stErrorRegister := ParseErrorRegister(fbSdoErrorRegisterValue);
+END_IF
+
+fbSdoNumberOfErrors(bStartReading := TRUE);
+IF fbSdoNumberOfErrors.ReadDataAvailable THEN
+	fbSdoNumberOfErrorsValue := fbSdoNumberOfErrors.GetReadDataAsUSINT();
+	Status.nNumErrors := fbSdoNumberOfErrorsValue;
+END_IF
+
+// Check for error field 1
+IF Status.nNumErrors >= 1 THEN
+	fbSdoErrorField_1(bStartReading := TRUE);
+	IF fbSdoErrorField_1.ReadDataAvailable THEN
+		fbSdoErrorFieldValue[1] := fbSdoErrorField_1.GetReadDataAsUDINT();
+		Status.ErrorField[1] := ParseErrorField(fbSdoErrorFieldValue[1]);
+	END_IF
+ELSE
+	fbSdoErrorFieldValue[1] := 0;
+	Status.ErrorField[1] := ParseErrorField(fbSdoErrorFieldValue[1]);		
+END_IF
+
+// Check for error field 2
+IF Status.nNumErrors >= 2 THEN
+	fbSdoErrorField_2(bStartReading := TRUE);
+	IF fbSdoErrorField_2.ReadDataAvailable THEN
+		fbSdoErrorFieldValue[2] := fbSdoErrorField_2.GetReadDataAsUDINT();
+		Status.ErrorField[2] := ParseErrorField(fbSdoErrorFieldValue[2]);
+	END_IF
+ELSE
+	fbSdoErrorFieldValue[2] := 0;
+	Status.ErrorField[2] := ParseErrorField(fbSdoErrorFieldValue[2]);		
+END_IF
+
+// Check for error field 3
+IF Status.nNumErrors >= 3 THEN
+	fbSdoErrorField_3(bStartReading := TRUE);
+	IF fbSdoErrorField_3.ReadDataAvailable THEN
+		fbSdoErrorFieldValue[3] := fbSdoErrorField_3.GetReadDataAsUDINT();
+		Status.ErrorField[3] := ParseErrorField(fbSdoErrorFieldValue[3]);
+	END_IF
+ELSE
+	fbSdoErrorFieldValue[3] := 0;
+	Status.ErrorField[3] := ParseErrorField(fbSdoErrorFieldValue[3]);		
+END_IF
+
+// Check for error field 4
+IF Status.nNumErrors >= 4 THEN
+	fbSdoErrorField_4(bStartReading := TRUE);
+	IF fbSdoErrorField_4.ReadDataAvailable THEN
+		fbSdoErrorFieldValue[4] := fbSdoErrorField_4.GetReadDataAsUDINT();
+		Status.ErrorField[4] := ParseErrorField(fbSdoErrorFieldValue[4]);
+	END_IF
+ELSE
+	fbSdoErrorFieldValue[4] := 0;
+	Status.ErrorField[4] := ParseErrorField(fbSdoErrorFieldValue[4]);		
+END_IF
+
+// Check for error field 5
+IF Status.nNumErrors >= 5 THEN
+	fbSdoErrorField_5(bStartReading := TRUE);
+	IF fbSdoErrorField_5.ReadDataAvailable THEN
+		fbSdoErrorFieldValue[5] := fbSdoErrorField_5.GetReadDataAsUDINT();
+		Status.ErrorField[5] := ParseErrorField(fbSdoErrorFieldValue[5]);
+	END_IF
+ELSE
+	fbSdoErrorFieldValue[5] := 0;
+	Status.ErrorField[5] := ParseErrorField(fbSdoErrorFieldValue[5]);		
+END_IF
+
+// Check for error field 6
+IF Status.nNumErrors >= 6 THEN
+	fbSdoErrorField_6(bStartReading := TRUE);
+	IF fbSdoErrorField_6.ReadDataAvailable THEN
+		fbSdoErrorFieldValue[6] := fbSdoErrorField_6.GetReadDataAsUDINT();
+		Status.ErrorField[6] := ParseErrorField(fbSdoErrorFieldValue[6]);
+	END_IF
+ELSE
+	fbSdoErrorFieldValue[6] := 0;
+	Status.ErrorField[6] := ParseErrorField(fbSdoErrorFieldValue[6]);		
+END_IF
+
+// Check for error field 7
+IF Status.nNumErrors >= 7 THEN
+	fbSdoErrorField_7(bStartReading := TRUE);
+	IF fbSdoErrorField_7.ReadDataAvailable THEN
+		fbSdoErrorFieldValue[7] := fbSdoErrorField_7.GetReadDataAsUDINT();
+		Status.ErrorField[7] := ParseErrorField(fbSdoErrorFieldValue[7]);
+	END_IF
+ELSE
+	fbSdoErrorFieldValue[7] := 0;
+	Status.ErrorField[7] := ParseErrorField(fbSdoErrorFieldValue[7]);		
+END_IF
+
+// Check for error field 8
+IF Status.nNumErrors >= 8 THEN
+	fbSdoErrorField_8(bStartReading := TRUE);
+	IF fbSdoErrorField_8.ReadDataAvailable THEN
+		fbSdoErrorFieldValue[8] := fbSdoErrorField_8.GetReadDataAsUDINT();
+		Status.ErrorField[8] := ParseErrorField(fbSdoErrorFieldValue[8]);
+	END_IF
+ELSE
+	fbSdoErrorFieldValue[8] := 0;
+	Status.ErrorField[8] := ParseErrorField(fbSdoErrorFieldValue[8]);		
+END_IF
+]]></ST>
+      </Implementation>
+    </Action>
     <Method Name="CheckModesOfOperation" Id="{94831596-bfdf-47dc-8611-97676ea87e3d}">
       <Declaration><![CDATA[METHOD PUBLIC CheckModesOfOperation : BOOL
 VAR_INPUT
@@ -371,6 +506,19 @@ END_IF
 
 Status.nCurrentPosition := GetPosition();
 Status.nCurrentVelocity := GetVelocity();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ClearErrorFields" Id="{349acb2b-3e41-469b-9238-6ad8e2c1ddad}">
+      <Declaration><![CDATA[
+METHOD PUBLIC ClearErrorFields : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+fbSdoNumberOfErrors.SetWriteDataFromUSINT(0);
+fbSdoNumberOfErrors(bStartWriting := TRUE);
+
+ClearErrorFields := Status.nNumErrors = 0;
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="EnableOperation" Id="{9324d522-180b-4f4d-94cf-c6b1bddf228a}">
@@ -549,6 +697,41 @@ GripThickness := GetPosition() - nObjectThickness;]]></ST>
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IsPolarityReversed := Status.bReversePolarity;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ParseErrorField" Id="{91c7a56f-de22-44a1-a522-ba1a42ef1935}">
+      <Declaration><![CDATA[
+METHOD ParseErrorField : ST_PDxx_PredefinedErrorField
+VAR_INPUT
+	nErrorFieldAsUDINT : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+ParseErrorField.nErrorCode 		:= UDINT_TO_UINT(nErrorFieldAsUDINT);
+ParseErrorField.stErrorClass	:= ParseErrorRegister(UDINT_TO_USINT(SHR(nErrorFieldAsUDINT,16)));
+ParseErrorField.nErrorNumber	:= UDINT_TO_USINT(SHR(nErrorFieldAsUDINT,24));
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ParseErrorRegister" Id="{30b57de2-60c6-46b5-86e6-c7fa3380a80f}">
+      <Declaration><![CDATA[
+METHOD PUBLIC ParseErrorRegister : ST_PDxx_ErrorRegister
+VAR_INPUT
+	nErrorRegisterAsUSINT : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+ParseErrorRegister.GEN 	:= nErrorRegisterAsUSINT.0; // General Error
+ParseErrorRegister.CUR 	:= nErrorRegisterAsUSINT.1; // Current
+ParseErrorRegister.VOL 	:= nErrorRegisterAsUSINT.2; // Voltage
+ParseErrorRegister.TEMP := nErrorRegisterAsUSINT.3; // Temperature
+ParseErrorRegister.COM	:= nErrorRegisterAsUSINT.4; // Communication
+ParseErrorRegister.PROF	:= nErrorRegisterAsUSINT.5; // Relates to the device profile
+ParseErrorRegister.RES	:= nErrorRegisterAsUSINT.6; // Reserved, always "0"
+ParseErrorRegister.MAN	:= nErrorRegisterAsUSINT.7; // Manufacturer-specific : The motor turns in the wrong direction
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="ProbeActualPositionLimits" Id="{7c7a05fe-7539-41c4-b37c-8f8bb00e3d51}">

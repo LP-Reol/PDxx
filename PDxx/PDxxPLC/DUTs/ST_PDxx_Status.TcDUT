@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
   <DUT Name="ST_PDxx_Status" Id="{182bda49-5b13-411c-ba43-6b60cb22b1dd}">
     <Declaration><![CDATA[TYPE ST_PDxx_Status :
 STRUCT
@@ -11,6 +11,10 @@ STRUCT
 	nTargetPosition				: DINT;
 	nMinActualPosition			: DINT;
 	nMaxActualPosition			: DINT;
+	bHasError					: BOOL;
+	stErrorRegister				: ST_PDxx_ErrorRegister;
+	nNumErrors					: USINT;
+	ErrorField					: ARRAY [1..8] OF ST_PDxx_PredefinedErrorField;
 END_STRUCT
 END_TYPE
 ]]></Declaration>
