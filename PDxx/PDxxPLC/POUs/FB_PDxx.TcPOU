@@ -92,7 +92,7 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-checkForErrors();
+CheckForErrors();
 CheckState();
 CheckModesOfOperation();
 CheckDigitalInputs();
@@ -200,8 +200,8 @@ VAR_INST
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[ControlWord := 0;
-
+        <ST><![CDATA[
+ControlWord := 0;
 
 IF eState = E_PDxx_State.FAULT THEN
 	IF Status.bHasError = FALSE THEN
@@ -214,15 +214,6 @@ IF eState = E_PDxx_State.FAULT THEN
 	stPDOs.RxPDO_1_6040h_ControlWord := ControlWord;
 	RETURN;
 END_IF
-
-// We check first if we need to recover from a Fault state
-//IF eState = E_PDxx_State.FAULT AND eState <> eRequestedState THEN
-//	bLastFaultResetBitState := bLastFaultResetBitState XOR 1; 
-//	stControlWord.FaultReset_bit_7		:= bLastFaultResetBitState;	// "Fault reset" transition 13 on rising edge
-//	ControlWord.7 := stControlWord.FaultReset_bit_7;
-//	stPDOs.RxPDO_1_6040h_ControlWord := ControlWord;
-//	RETURN;
-//END_IF
 
 (* All of the below cases are taken from the transistion diagram on p. 34 in the manual *)
 
@@ -316,12 +307,10 @@ IF fbSdoErrorRegister.ReadDataAvailable THEN
 	Status.stErrorRegister := ParseErrorRegister(fbSdoErrorRegisterValue);
 END_IF
 
-IF fbSdoErrorRegisterValue <> 0 THEN
-	fbSdoNumberOfErrors(bStartReading := TRUE);
-	IF fbSdoNumberOfErrors.ReadDataAvailable THEN
-		fbSdoNumberOfErrorsValue := fbSdoNumberOfErrors.GetReadDataAsUSINT();
-		Status.nNumErrors := fbSdoNumberOfErrorsValue;
-	END_IF
+fbSdoNumberOfErrors(bStartReading := TRUE);
+IF fbSdoNumberOfErrors.ReadDataAvailable THEN
+	fbSdoNumberOfErrorsValue := fbSdoNumberOfErrors.GetReadDataAsUSINT();
+	Status.nNumErrors := fbSdoNumberOfErrorsValue;
 END_IF
 
 // Check for error field 1
@@ -519,6 +508,19 @@ Status.nCurrentPosition := GetPosition();
 Status.nCurrentVelocity := GetVelocity();]]></ST>
       </Implementation>
     </Method>
+    <Method Name="ClearErrorFields" Id="{349acb2b-3e41-469b-9238-6ad8e2c1ddad}">
+      <Declaration><![CDATA[
+METHOD PUBLIC ClearErrorFields : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+fbSdoNumberOfErrors.SetWriteDataFromUSINT(0);
+fbSdoNumberOfErrors(bStartWriting := TRUE);
+
+ClearErrorFields := Status.nNumErrors = 0;
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="EnableOperation" Id="{9324d522-180b-4f4d-94cf-c6b1bddf228a}">
       <Declaration><![CDATA[METHOD PUBLIC EnableOperation : BOOL
 ]]></Declaration>
@@ -703,27 +705,9 @@ METHOD ParseErrorField : ST_PDxx_PredefinedErrorField
 VAR_INPUT
 	nErrorFieldAsUDINT : UDINT;
 END_VAR
-//VAR
-//	ErrorField : ST_PDxx_PredefinedErrorField;
-//	ErrorClass	: USINT;
-//END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-//ErrorField.nErrorCode := UDINT_TO_UINT(nErrorFieldAsUDINT);
-//ErrorClass := UDINT_TO_USINT(SHR(nErrorFieldAsUDINT,2));
-//ErrorField.nErrorNumber := UDINT_TO_USINT(SHR(nErrorFieldAsUDINT,3));
-//ErrorField.stErrorClass.GEN 	:= ErrorClass[0]; // General Error
-//ErrorField.stErrorClass.CUR 	:= ErrorClass[1]; // Current
-//ErrorField.stErrorClass.VOL 	:= ErrorClass[2]; // Voltage
-//ErrorField.stErrorClass.TEMP 	:= ErrorClass[3]; // Temperature
-//ErrorField.stErrorClass.COM		:= ErrorClass[4]; // Communication
-//ErrorField.stErrorClass.PROF	:= ErrorClass[5]; // Relates to the device profile
-//ErrorField.stErrorClass.RES		:= ErrorClass[6]; // Reserved, always "0"
-//ErrorField.stErrorClass.MAN		:= ErrorClass[7]; // Manufacturer-specific : The motor turns in the wrong direction
-
-//ParseErrorField := ErrorField;
-
 ParseErrorField.nErrorCode 		:= UDINT_TO_UINT(nErrorFieldAsUDINT);
 ParseErrorField.stErrorClass	:= ParseErrorRegister(UDINT_TO_USINT(SHR(nErrorFieldAsUDINT,16)));
 ParseErrorField.nErrorNumber	:= UDINT_TO_USINT(SHR(nErrorFieldAsUDINT,24));

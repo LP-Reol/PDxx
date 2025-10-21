@@ -19,7 +19,7 @@
     <Company>iMusic AS</Company>
     <Released>false</Released>
     <Title>PDxx</Title>
-    <ProjectVersion>0.4.0.2</ProjectVersion>
+    <ProjectVersion>0.4.0.3</ProjectVersion>
     <LibraryCategories>
       <LibraryCategory xmlns="">
         <Id>{1ae6d400-55f5-48a0-9fa9-d6a1ce9670ee}</Id>
